@@ -1,0 +1,76 @@
+/1 bind socket to port 5 of the first available bluetooth adapter
+loc_addr. 12_family = AF_BLUETOOTH;
+
+Loc_addr. L2_bdaddr = *BDADDR_ANV;
+
+Loc_adér.12_psm = htobs(0x1001);
+
+bind (s , (struct sockaddr *)&loc_addr , sizeof(loc_addr));
+
+/1 put socket into Listening mode
+listen (s, 1);
+
+// accept one connection
+client = accept (s , (struct sockaddr *)ärem_addr , &opt ) ;
+
+ba2str ( &rem_addr.12_bdaddr , buf ) ;
+
+fprintf(stderr , “accepted connection from %s\n° , buf ) ;
+menset(buf , 0, sizeof(buf ));
+
+/1 read data from the client
+
+int check = 1;
+
+iso,
+
+ 
+
+ 
+
+ 
+
+Long temps_envo:
+struct timeval start, end;
+gettimeofday(&start, NULL);
+while(check) {
+
+ 
+
+ 
+
+bytes_read = recv (client , buf , sizeof(buf), 0);
+if( bytes_read > 0 ) {
+if( stremp(buf, stop") == 0 ){
+check = 6;
+
+ 
+
+ 
+
+Jetse if(stremp(buf, "next") == 0){
+gettimeofday(&end, NULL);
+temps_envoi = ((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec));
+tempsbouc Le+= temps envoi;
+printf("Temps pour n = xd : Xld micro seconds\n",k, temps_ envoi);
+fprintf(resultat, "ad : %1d ms\n',k, temps_envoi):
+k
+
+ 
+
+ 
+
+ 
+
+ 
+
+gettimeofday(astart, NULL);
+Jets
+
+ 
+
+strepy(test, buf);
+if (fichier != NULL){
+
+ 
+

@@ -1,0 +1,23 @@
+fprintf(fichier, "xs", test);
+Ziprintf("%s \n", test);
+
+}
+
+menset(buf , 0, sizeof(buf ));
+}
+
+}
+
+gettimeofday(&end, NULL);
+
+tempsboucle += ((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec));
+printf("Temps total moyen: *ld micro seconds\n”, tempsbouc Le/10) ;
+
+fprintf(resultat, "Moyenne : XLd ms \n°, tempsboucle/10);
+
+close (client) ;
+
+close (s) ;
+
+ 
+
