@@ -2,6 +2,7 @@ import os
 
 MTU_Sizes = [7810,15620,31040]
 for i, MTU_Size in zip(range(len(MTU_Sizes)), MTU_Sizes):
+    
     dossier = os.popen('pwd').read()
     filename = "clientMTU_Changed_" + str(i)
     file = str(dossier) + "/" + str(filename)
