@@ -1,6 +1,8 @@
 import os
+from time import sleep
 
-MTU_Sizes = [7810,15620,31040]
+MTU_Sizes = [80,600,2000,3200,6000,12800,24000,35600,49600,59400,65520]
+TransmissionRate = []
 for i, MTU_Size in zip(range(len(MTU_Sizes)), MTU_Sizes):
     
     dossier = "C:/Users/flaph/OneDrive/Documents/GitHub-PERSEUS/Pole-Capteurs/server"
@@ -19,3 +21,14 @@ for i, MTU_Size in zip(range(len(MTU_Sizes)), MTU_Sizes):
 
     os.system("gcc -o " + str(filename) + " " + str(filename) + ".c -lbluetooth")
     os.system("./"+str(filename))
+    sleep(20)
+    subcmd=os.popen('ls ./','r') #Ici on devrait pouvoir lire ce que le terminal nous donne mais il faudra trouver le bon "print"
+    TransmissionRate.append([MTU_Size[i],subcmd.read()])
+
+min = 900000000000000000000
+indice = -1
+for i in range(len(TransmissionRate)) :
+    if TransmissionRate[i][1] < min :
+        min = TransmissionRate[i][1]
+        indice = i
+print("Le MTU optimal est de ", indice)
