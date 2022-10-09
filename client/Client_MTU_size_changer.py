@@ -1,8 +1,9 @@
 import os
+from time import sleep
 
-
-MTU_Sizes = [7810,15620,31040]
+MTU_Sizes = [80,600,2000,3200,6000,12800,24000,35600,49600,59400,65520]
 for i, MTU_Size in zip(range(len(MTU_Sizes)), MTU_Sizes):
+    sleep(5)
     dossier = "C:/Users/flaph/OneDrive/Documents/GitHub-PERSEUS/Pole-Capteurs/client"
     filename = "clientMTU_Changed_" + str(i)
     file = str(dossier) + "/" + str(filename) + ".c"

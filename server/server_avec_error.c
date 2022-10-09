@@ -7,7 +7,7 @@
 #include <assert.h>
 #include <time.h>
 #include <sys/time.h>
-#include <pthread.h>
+#include <sched.h>
 
 /*pthread_attr_t tattr1;  // Création d'un attribut de thread
 
@@ -167,7 +167,7 @@ int main(int argc , char ** argv){
 
 	struct sched_param sched_p;                                                                 // Création d'une structure d'ordonancement temps réel pour le programme
 
-	sched_p.sched_priority = 5;                                                                             // Affectation d'une priorité temps réel entre 0 et 99
+	sched_p.sched_priority = 50;                                                                             // Affectation d'une priorité temps réel entre 0 et 99
 
 	if(sched_setscheduler(0, SCHED_RR, &sched_p) == -1)  {                                            // Affectation d'un ordonancement Round-robin avec le paramètre de priorité défini précédemment si l'opération se passe sans erreur
 
