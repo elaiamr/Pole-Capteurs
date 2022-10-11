@@ -1,0 +1,4 @@
+int main() {
+  char chaine[130];
+  printf("chaine");
+}
