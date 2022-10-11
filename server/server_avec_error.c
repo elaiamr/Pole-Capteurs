@@ -48,16 +48,16 @@ char ** DataConvert ( char * lien ){
 	int i,j,k,ind;
 
 	//allocation mémoire
-	data = (char **)malloc(6248 * sizeof(char *));
-	for (i= 0; i < 6248; i++){
-		data[i] = (char *)malloc(130 * sizeof(char ));
+	data = (char **)malloc(144171 * sizeof(char *));
+	for (i= 0; i < 144171; i++){
+		data[i] = (char *)malloc(126 * sizeof(char ));
 	}
 	//lecture fichier
-	char chaine[130]; // cdc correspondant à 1 ligne
-	for(i=0;i<6248;i++){
-		fgets (chaine, 130, fichier);
+	char chaine[126]; // cdc correspondant à 1 ligne
+	for(i=0;i<144171;i++){
+		fgets (chaine, 126, fichier);
 		strcpy(data[i], chaine);
-		memset (chaine, 0, 130);
+		memset (chaine, 0, 126);
 	}
 	return data;
 }
@@ -100,11 +100,11 @@ float Error_Rate_Fct(char * final_data, char * initial_data){
         //Récupération du nombre de colonnes
         int nb_colonnes_i = sizeColumns(data_i,i);
         for (j=0;j<nb_colonnes_i;j++){
-		nb_data++;
-		if (data_i[i][j] != data_f[i][j]){
-			nb_errors++;	// On compte le nombre d'erreurs dans la fonction
+			nb_data++;
+			if (data_i[i][j] != data_f[i][j]){
+				nb_errors++;	// On compte le nombre d'erreurs dans la fonction
+			}
 		}
-	}
     }
 
     // Calcul du taux d'erreur
@@ -160,9 +160,9 @@ int main(int argc , char ** argv){
 	unsigned int opt = sizeof(rem_addr ) ;
 	int i,j;
 	char ** data;
-	int n = 6248;
+	int n = 144171;
 	char test[10000] = { 0 } ;
-	
+	int mtu_value = 31240;
 	//Définition de la priorité du script en priorité temps réel
 
 	struct sched_param sched_p;                                                                 // Création d'une structure d'ordonancement temps réel pour le programme
@@ -183,17 +183,17 @@ int main(int argc , char ** argv){
 	resultat = fopen("result.txt","a"); 
 
 	//allocation mémoire
-	data = (char **)malloc(6248 * sizeof(char *));
-	for (i=0; i<15; i++){
-		data[i] = (char *)calloc(4200 , sizeof(char));
+	data = (char **)malloc(n * sizeof(char *));
+	for (i=0; i<n; i++){
+		data[i] = (char *)calloc(126 , sizeof(char));
 	}
 
 	//création socket
 	s = socket ( AF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP );
 	
-	set_l2cap_mtu(s , 31240 ); // change la MTU à 10000
+	
 
-
+	set_l2cap_mtu(s , mtu_value ); // change la MTU à 10000
 
 
 	// bind socket to port 5 of the first available bluetooth adapter
@@ -242,8 +242,10 @@ int main(int argc , char ** argv){
 			}else{
 				strcpy(test, buf);
 				if (fichier != NULL){
-					fprintf(fichier, "%s", test);
-					//printf("%s \n", test);
+					if (k==1) {     // pour n'écrire qu'une seule fois les résultats de la transmission et non 10 fois !!
+						fprintf(fichier, "%s", test);
+						//printf("%s \n", test);
+					}
 				}
 			}
 			memset(buf , 0, sizeof(buf ));

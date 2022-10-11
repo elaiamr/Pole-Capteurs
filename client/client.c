@@ -20,17 +20,17 @@ char ** DataConvert ( char * lien ){
 	int i,j,k,ind;
 
 	//allocation mémoire
-	data = (char **)malloc(6248 * sizeof(char *));
-	for (i = 0; i < 6248; i++){
-		data[i] = (char *)malloc(130 * sizeof(char ));
+	data = (char **)malloc(144171 * sizeof(char *));
+	for (i = 0; i < 144171; i++){
+		data[i] = (char *)malloc(126 * sizeof(char ));
 	}
 	//lecture fichier
-	char chaine[130]; // cdc correspondant à 1 ligne
-	for(i=0;i<6248;i++){
-		fgets (chaine, 130, fichier);
+	char chaine[126]; // cdc correspondant à 1 ligne
+	for(i=0;i<144171;i++){
+		fgets (chaine, 126, fichier);
 		strcpy(data[i], chaine);
 		printf("%d : %s \n",i, data[i]);
-		memset (chaine, 0, 130);
+		memset (chaine, 0, 126);
 	}
 	return data;
 }
@@ -57,7 +57,9 @@ int envoie(char ** data){
 	// allocate a socket
 	s = socket(AF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP) ;
 
-   	set_l2cap_mtu( s , 15620 );
+	int mtu_value = 15620;
+
+   	set_l2cap_mtu( s , mtu_value );
 
 	// set the connection parameters (who to connect to)
 	addr.l2_family = AF_BLUETOOTH;
@@ -73,21 +75,21 @@ int envoie(char ** data){
 	k = 0;
 	struct timeval start, end;
 
-	char paquet[4200] = {0};
+	char paquet[mtu_value] = {0};
 	
 
 	if( 0 == status ) {
 		printf("Connexion réussie\n");
 		gettimeofday(&start, NULL);
 		for (k=0;k<10;k++){
-			for (i=0; i<6240;i+=32){
-				memset (paquet, 0, 4200);
+			for (i=0; i<144171;i+=32){
+				memset (paquet, 0, mtu_value);
 				for(j=0; j<32; j++){
 					strcat (paquet, data[i+j]);
 					//strcat (paquet, "\n");
 				}
 				//printf("Envoie ligne %d \n", i);
-				send(s, paquet, 4200, 0);
+				send(s, paquet, mtu_value, 0);
 			}			
 			send(s, "next",4,0);
 
