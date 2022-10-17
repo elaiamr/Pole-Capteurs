@@ -6,54 +6,82 @@
 
 char ** DataConvert ( char * lien ){
 
-	//ouverture fichier
+    // Ouverture du fichier
 	FILE * fichier = fopen(lien, "r");
 
-	assert (fichier != NULL);
+    // Initialisations
+    size_t sizeColumns = 0;
+    size_t sizeLines = 0;
+    char currentChar;
+    char ** data;
+    int c1 = 1;  // compteur de lignes
+    int c2 = 1;  // compteur de colonnes
+    int c3 = 0;  // compteur annexe
+    int lostLines = 0;
 
-	char ** data;
-	int i,j,k,ind;
+    // Allocation mémoire initiale
+    data = (char **) malloc (c1 * sizeof(char *));
+    data[c1 - 1] = (char *) malloc (c2 * sizeof(char));
 
-	//allocation mémoire
-	data = (char **)malloc(144171 * sizeof(char *));
-	for (i= 0; i < 144171; i++){
-		data[i] = (char *)malloc(130 * sizeof(char ));
-	}
-	//lecture fichier
-	char chaine[130]; // cdc correspondant à 1 ligne
-	for(i=0;i<144171;i++){
-		fgets (chaine, 130, fichier);
-		strcpy(data[i], chaine);
-		//printf("%d : %s \n",i, data[i]);
-		memset (chaine, 0, 130);
-	}
-	return data;
+    while ( ! feof(fichier)) {
+
+        // Récupération du caractère lu
+        currentChar = fgetc(fichier);
+        int currentInt = currentChar;
+
+        if (currentInt == 10) {    // Si on a un saut de ligne
+            c1++;
+            if (c1==2){      
+                c3 = c2;       // Stockage du nombre de colonnes "normal" du fichier
+            } else {
+                if (c2 == c3 + 1 || c2 == c3 - 1){    // Présence (ou non) des - dans les données
+                    c3 = c2;     // Stockage du nouveau nombre "normal" de colonnes
+                }
+                if (c2 != c3){
+                    printf("Il manque %d caracteres dans la ligne %d du fichier %s\n", abs(c2-c3), c1, lien);
+                    lostLines++;
+                }
+            }
+            c2 = 1;      // Retour à la première colonne
+
+            // Réallocation mémoire pour la nouvelle ligne
+            data = (char **) realloc (data, c1 * sizeof(char *));
+            data [c1 - 1] = (char *) malloc (c2 * sizeof(char));
+
+        } else {
+
+            c2++;
+
+            // Réallocation mémoire pour la nouvelle colonne
+            data[c1 - 1] = (char *) realloc (data[c1 - 1], c2 * sizeof(char));
+            data[c1 - 1][c2 - 2] = currentChar;
+        }
+    }
+
+    // On enlève la dernière ligne correspondant à EOF
+    c1--;
+    printf("Nombre de lignes du fichier %s: %d\n", lien, c1);
+
+    return data, c1;
 }
 
 
-float errorRate(int nbLignes, int nbColonnes, char final_data[nbLignes][nbColonnes], char initial_data [nbLignes][nbColonnes]){
-
-    /*
-    // Ouverture du fichier envoyé
-    initial_data = strcat("/home/pi/Desktop/",initial_data);
-    char ** initi DataConvert(initial_data);
-
-    // Ouverture du fichier reçu
-    initi strcat("/home/pi/Desktop/",initi
-    char ** data_f = DataConvert(initi
-    */
+float errorRate(char ** data1, char ** data2, int sizeLines){
 
     float nb_errors = 0;
     float nb_data = 0;
 
     int i = 0;
     int j = 0;
-    for (i=0;i<nbLignes;i++){
-        for (j=0;j<nbColonnes;j++){
+    printf("Ok !\n");
+    for (i=0;i<sizeLines;i++){
+        printf("%c\n", data1[i][j]);
+        while (data1[i][j] != NULL && data2[i][j] != NULL){
             nb_data++;
-            if (initial_data[i][j] != final_data[i][j]){
+            if (data1[i][j] != data2[i][j]){
                 nb_errors++;
             }
+            j++;
         }
     }
     // Calcul du taux d'erreur
@@ -61,77 +89,21 @@ float errorRate(int nbLignes, int nbColonnes, char final_data[nbLignes][nbColonn
     return error_rate;
 }
 
-float loss_rate_Fct(int nbLignes_i, int nbLignes_j, int nbColonnes_i, int nbColonnes_j, char final_data[nbLignes_i][nbColonnes_i], char initial_data[nbLignes_j][nbColonnes_j]) {
-
-    float nb_loss = 0;
-    float nb_data = 0;
-
-    int i = 0;
-    int j = 0;
-
-    // Vérification du nombre de lignes
-
-    if (nbLignes_i > nbLignes_j) {
-        nb_loss = nb_loss + (nbLignes_i - nbLignes_j);
-        nb_data = nbLignes_i * 4;
-
-        int nb_donnees_j = sizeof(final_data[nbLignes_i -1]);   //ici pareil à vérifier
-        nb_loss = nb_loss + (4-nb_donnees_j);   //en gros on vérifie que la dernière soit bien composée de 5 données sinon on ajoute
-    }
-
-    else {
-        nb_loss = nb_loss + (nbLignes_j - nbLignes_i);
-        nb_data = nbLignes_j * 4;
-
-        int nb_donnees_i = sizeof(final_data[nbLignes_i -1]);   //ici pareil à vérifier
-        nb_loss = nb_loss + (4-nb_donnees_i);   //en gros on vérifie que la dernière soit bien composée de 5 données sinon on ajoute
-	printf("%d\n", nb_donnees_i);
-    
-    }
-
-    float loss_rate = nb_loss / nb_data * 100;
-    return loss_rate;
-
-}
-
-int sizeLines(char ** data){
-    int size = 0;
-    while (data[size] != NULL) {
-        size++;
-    }
-    return size;
-}
-
-int sizeColumns(char ** data){
-    int i=0;
-    int c1=0;
-    for (i=0;i<sizeLines(data);i++){
-        if ((sizeof(data[i])+1) != 5){
-            printf("Erreur en ligne %d, seulement %d colonnes\n", i, sizeof(data[i])+1);
-        } else {
-            c1++;
-        }
-    }
-    if (c1 == sizeLines(data)){
-        return 5;
-    }
-    return -1;
-}
-
 
 int main(){
+
+    // Initialisations
     char ** data;
     char ** data2;
     char ** data3;
+    int sizeLines, sizeLines2, sizeLines3;
 
-    data = DataConvert("Numerical_Results_capteur.txt");
-    printf("Lignes v1 : %d\n", sizeLines(data));
-    printf("Colonnes v1 : %d\n", sizeColumns(data));
+    // Conversion des fichiers txt
+    data, sizeLines = DataConvert("Numerical_Results_capteur.txt");
+    data2, sizeLines2 = DataConvert("Numerical_Results_capteur_2.txt");
+    data3, sizeLines3 = DataConvert("Numerical_Results_capteur_3.txt");
 
-    data2 = DataConvert("Numerical_Results_capteur_2.txt");
-    printf("Lignes v2 : %d\n", sizeLines(data2));
-    printf("Colonnes v2 : %d\n", sizeColumns(data2));
-
-    data3 = DataConvert("Numerical_Results_capteur_3.txt");
-    
+    // Mise en application
+    printf("%s\n", data[556][1]);     /////// Je n'arrive pas à accéder à data
+    printf("Taux d'erreur : %f\n", errorRate(data, data3, sizeLines));
 }
