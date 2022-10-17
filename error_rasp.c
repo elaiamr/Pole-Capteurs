@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <math.h>
 
+// ATTENTION - FICHIER DUPLIQUE, ET AVEC MAUVAISES FONCTIONS
 char ** DataConvert ( char * lien ){
 
 	//ouverture fichier
@@ -100,7 +101,7 @@ float loss_rate_Fct(char * final_data, char * initial_data){
 
     // Vérification du nombre de lignes
     int nb_lignes_i = sizeof(data_i);
-    int nb_lignes_f = sizeof(data_f);    # il va falloir vérifier si ça renvoie bien le nombre de lignes ou si c est multiplié par 8,16 etc parce que c est un char et non un int
+    int nb_lignes_f = sizeof(data_f);    // il va falloir vérifier si ça renvoie bien le nombre de lignes ou si c est multiplié par 8,16 etc parce que c est un char et non un int
 
     if (nb_lignes_i > nb_lignes_j) {
         float nb_loss = nb_loss + (nb_lignes_i - nb_lignes_j);

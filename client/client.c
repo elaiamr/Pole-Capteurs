@@ -82,23 +82,23 @@ int envoie(char ** data){
 		printf("Connexion réussie\n");
 		gettimeofday(&start, NULL);
 		for (k=0;k<10;k++){
-			for (i=0; i<144171;i+=32){
-				memset (paquet, 0, mtu_value);
+			for (i=0; i<144171;i+=32){//ATTENTION - il utilise la taille ordinaire déjà, c'est meilleur de definir une fonction aussi(on peut mal compter) 
+				memset (paquet, 0, mtu_value);  // ATTENTION  - s'il fait la substituition de tous les 0s, il change aussi les donnés 
 				for(j=0; j<32; j++){
-					strcat (paquet, data[i+j]);
+					strcat (paquet, data[i+j]); //ATTENTION - Si data c'est un char **, on envoie a chaque packet 32 lignes ? pq?
 					//strcat (paquet, "\n");
 				}
 				//printf("Envoie ligne %d \n", i);
 				send(s, paquet, mtu_value, 0);
 			}			
-			send(s, "next",4,0);
+			send(s, "next",4,0); // ATTENTION - je propose de change "next" par un autre chose utile, par exemple /0 ou /1
 
 		}	
 		send(s,"stop",4,0);
 		gettimeofday(&end, NULL);
 		printf("Temps total : %ld micro seconds\n",
 		((end.tv_sec * 1000000 + end.tv_usec) -
-		(start.tv_sec * 1000000 + start.tv_usec)));
+		(start.tv_sec * 1000000 + start.tv_usec)));// ATTENTION - fois 2
 	}
 	if( status < 0 ) {
 		fprintf(stderr, "error code %d: %s\n", errno, strerror(errno));
