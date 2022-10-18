@@ -4,12 +4,18 @@
 #include <unistd.h>
 #include <string.h>
 
-char ** DataConvert ( char * lien ){
+typedef struct {
+    char ** data;
+    int sizeLines;
+} data_lines ;
+
+data_lines DataConvert ( char * lien ){
 
     // Ouverture du fichier
 	FILE * fichier = fopen(lien, "r");
 
     // Initialisations
+    data_lines dataConverted;
     size_t sizeColumns = 0;
     size_t sizeLines = 0;
     char currentChar;
@@ -30,6 +36,7 @@ char ** DataConvert ( char * lien ){
         int currentInt = currentChar;
 
         if (currentInt == 10) {    // Si on a un saut de ligne
+
             c1++;
             if (c1==2){      
                 c3 = c2;       // Stockage du nombre de colonnes "normal" du fichier
@@ -56,13 +63,19 @@ char ** DataConvert ( char * lien ){
             data[c1 - 1] = (char *) realloc (data[c1 - 1], c2 * sizeof(char));
             data[c1 - 1][c2 - 2] = currentChar;
         }
+        if (c1 == 144171){
+            printf("%d ", c2);
+        }
     }
 
-    // On enlève la dernière ligne correspondant à EOF
-    c1--;
-    printf("Nombre de lignes du fichier %s: %d\n", lien, c1);
+    // printf("Nombre de lignes du fichier %s: %d\n", lien, c1);
 
-    return data, c1;
+    printf("%s\n", data[144170]);
+
+    dataConverted.data = data;
+    dataConverted.sizeLines = c1-1;
+
+    return dataConverted;
 }
 
 
@@ -73,7 +86,6 @@ float errorRate(char ** data1, char ** data2, int sizeLines){
 
     int i = 0;
     int j = 0;
-    printf("Ok !\n");
     for (i=0;i<sizeLines;i++){
         printf("%c\n", data1[i][j]);
         while (data1[i][j] != NULL && data2[i][j] != NULL){
@@ -83,6 +95,7 @@ float errorRate(char ** data1, char ** data2, int sizeLines){
             }
             j++;
         }
+        j=0;
     }
     // Calcul du taux d'erreur
     float error_rate = nb_errors / nb_data * 100;
@@ -93,17 +106,17 @@ float errorRate(char ** data1, char ** data2, int sizeLines){
 int main(){
 
     // Initialisations
-    char ** data;
-    char ** data2;
-    char ** data3;
-    int sizeLines, sizeLines2, sizeLines3;
+    data_lines data1;
+    data_lines data2;
+    data_lines data3;
 
     // Conversion des fichiers txt
-    data, sizeLines = DataConvert("Numerical_Results_capteur.txt");
-    data2, sizeLines2 = DataConvert("Numerical_Results_capteur_2.txt");
-    data3, sizeLines3 = DataConvert("Numerical_Results_capteur_3.txt");
+    data1 = DataConvert("Numerical_Results_capteur.txt");
+    data2 = DataConvert("Numerical_Results_capteur_2.txt");
+    data3 = DataConvert("Numerical_Results_capteur_3.txt");
 
     // Mise en application
-    printf("%s\n", data[556][1]);     /////// Je n'arrive pas à accéder à data
-    printf("Taux d'erreur : %f\n", errorRate(data, data3, sizeLines));
+    printf("%s\n", data1.data[144171]);   // on a une erreur sur la toute dernière ligne
+    printf("%d\n",data1.sizeLines);
+    //printf("Taux d'erreur : %f\n", errorRate(data1.data, data3.data, data1.sizeLines));
 }
