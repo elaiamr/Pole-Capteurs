@@ -111,12 +111,12 @@ int main(){
     data_lines data3;
 
     // Conversion des fichiers txt
-    data1 = DataConvert("Numerical_Results_capteur.txt");
+    //data1 = DataConvert("Numerical_Results_capteur.txt");
     data2 = DataConvert("Numerical_Results_capteur_2.txt");
-    data3 = DataConvert("Numerical_Results_capteur_3.txt");
+    //data3 = DataConvert("Numerical_Results_capteur_3.txt");
 
     // Mise en application
-    printf("%s\n", data1.data[144171]);   // on a une erreur sur la toute dernière ligne
-    printf("%d\n",data1.sizeLines);
+    printf("%s\n", data2.data[144170]);   // on a une erreur sur la toute dernière ligne
+    printf("%d\n",data2.sizeLines);
     //printf("Taux d'erreur : %f\n", errorRate(data1.data, data3.data, data1.sizeLines));
 }
