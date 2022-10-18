@@ -26,12 +26,13 @@ if (err != 0)  {                                                                
 
 }*/
 
-int set_l2cap_mtu( int s , uint16_t mtu ) {
-	struct l2cap_options opts ;
+//fonction avec la librarie bluetooth
+int set_l2cap_mtu( int s , uint16_t mtu ) { 
+	struct l2cap_options opts ; 													//struct des packets bluetooth
 	int optlen = sizeof(opts );
-	int status = getsockopt ( s , SOL_L2CAP , L2CAP_OPTIONS , &opts ,&optlen ) ;
-	if( status == 0) {
-		opts . omtu = opts . imtu = mtu ;
+	int status = getsockopt ( s , SOL_L2CAP , L2CAP_OPTIONS , &opts ,&optlen ) ; 	//ecrire options d'un socket
+	if( status == 0) {																// si tout va bien
+		opts.omtu = opts.imtu = mtu ; 												// definir la taille du mtu envoyé et reçu
 		status = setsockopt( s , SOL_L2CAP , L2CAP_OPTIONS , &opts ,optlen ) ;
 	}
 	return status ;
@@ -79,14 +80,11 @@ int sizeColumns(char ** data, int i){
 }
 
 //Fonction taux d'erreur
-
 float Error_Rate_Fct(char * final_data, char * initial_data){
 
-    // Ouverture du fichier envoyé
-    char ** data_i = DataConvert(initial_data);
-
-    // Ouverture du fichier reçu
-    char ** data_f = DataConvert(final_data);
+    
+    char ** data_i = DataConvert(initial_data);						// Ouverture du fichier envoyé
+    char ** data_f = DataConvert(final_data);    					// Ouverture du fichier reçu
 
     float nb_errors = 0;
     float nb_data = 0;
@@ -94,33 +92,30 @@ float Error_Rate_Fct(char * final_data, char * initial_data){
     int i = 0;
     int j = 0;
 
-    // Récupération du nombre de lignes
-    int nb_lignes_i = sizeLines(data_i);
-    for (i=0;i<nb_lignes_i;i++){
-        //Récupération du nombre de colonnes
-        int nb_colonnes_i = sizeColumns(data_i,i);
-        for (j=0;j<nb_colonnes_i;j++){
-			nb_data++;
+   
+    int nb_lignes_i = sizeLines(data_i); 							// Récupération du nombre de lignes
+    for (i=0;i<nb_lignes_i;i++){									//verifier tous les lignes
+        int nb_colonnes_i = sizeColumns(data_i,i);					//Récupération du nombre de colonnes
+        for (j=0;j<nb_colonnes_i;j++){								//verifier tous les colonnes
+			nb_data++;												// On compte le nombre des données dans la fonction
 			if (data_i[i][j] != data_f[i][j]){
-				nb_errors++;	// On compte le nombre d'erreurs dans la fonction
+				nb_errors++;										// On compte le nombre d'erreurs dans la fonction
 			}
 		}
     }
 
-    // Calcul du taux d'erreur
-    float error_rate = nb_errors / nb_data * 100;
+
+    float error_rate = nb_errors / nb_data * 100;    				// Calcul du taux d'erreur
     return error_rate;
 }
 
+
 //Fonction taux de pertes
+float loss_rate_Fct(char * final_data, char * initial_data){		
 
-float loss_rate_Fct(char * final_data, char * initial_data){
-
-    // Ouverture du fichier envoyé
-    char ** data_i = DataConvert(initial_data);
-
-    // Ouverture du fichier reçu
-    char ** data_f = DataConvert(final_data);
+    char ** data_i = DataConvert(initial_data);						// Ouverture du fichier envoyé
+    char ** data_f = DataConvert(final_data);    					// Ouverture du fichier reçu
+   ,// char ** data_tmp;    										// variable temporaire
 
     float nb_loss = 0;
     float nb_data = 0;
@@ -130,16 +125,46 @@ float loss_rate_Fct(char * final_data, char * initial_data){
 
     int nb_lignes_i = sizeLines(data_i);
     int nb_lignes_f = sizeLines(data_f);
+/*
+	float loss_rate = 1;
+	
 
+    if (nb_lignes_i > nb_lignes_f) { //si lignes plus grandes, inverte les donné pour eviter des erreus dans la prochaine fonction
+		data_tmp = data_i;
+		data_i = data_f;
+		data_f = data_tmp;
+	}
+	nb_loss = nb_loss + (nb_lignes_f - nb_lignes_i);
+    nb_data = nb_lignes_f * 5;
+	// en vrai tous les trucs au dessus sont inutiles
+
+
+    int nb_donnees_i = sizeColumns(data_i,nb_lignes_i-1);   //on prend la dernière ligne
+    nb_loss = nb_loss + (5-nb_donnees_i);   //en gros on vérifie que la dernière soit bien composée de 5 données sinon on ajoute
+ 
+ 	if(nb_lignes_i != nb_lignes_f)
+		loss_rate = nb_loss / nb_data * 100; // ça va compter tjrs juste la dernière ligne, n'importe la taile de nb_data
+		
+	return loss_rate
+*/
+
+/*
+cette fonction y'a pas du sense
+
+1 -d'abbord elle repète le même code deux fois
+
+2 -  elle compte la difference entre la quantité de colonnes et lignes (????????)
+3 - elle multiplie par 5 la quantité des lignes (?)
+4 - nb_donnes*/
     if (nb_lignes_i > nb_lignes_f) {
-        nb_loss = nb_loss + (nb_lignes_i - nb_lignes_f);
-        nb_data = nb_lignes_i * 5;
+        nb_loss = nb_loss + (nb_lignes_i - nb_lignes_f); // 100% inutile
+        nb_data = nb_lignes_i * 5; // 100% inutile
         int nb_donnees_f = sizeColumns(data_f,nb_lignes_f-1);   //on prend la dernière ligne
         nb_loss = nb_loss + (5-nb_donnees_f);   //en gros on vérifie que la dernière soit bien composée de 5 données sinon on ajoute
 
     } else if (nb_lignes_i < nb_lignes_f) {
-        nb_loss = nb_loss + (nb_lignes_f - nb_lignes_i);
-        nb_data = nb_lignes_f * 5;
+        nb_loss = nb_loss + (nb_lignes_f - nb_lignes_i); // 100% inutile
+        nb_data = nb_lignes_f * 5; // 100% inutile
         int nb_donnees_i = sizeColumns(data_i,nb_lignes_i-1);   //on prend la dernière ligne
         nb_loss = nb_loss + (5-nb_donnees_i);   //en gros on vérifie que la dernière soit bien composée de 5 données sinon on ajoute
     
@@ -154,24 +179,25 @@ float loss_rate_Fct(char * final_data, char * initial_data){
 }
 
 int main(int argc , char ** argv){
-	struct sockaddr_l2 loc_addr = { 0 } , rem_addr = { 0 } ;
+	struct sockaddr_l2 loc_addr = { 0 } , rem_addr = { 0 } ; // struct de socket
 	char buf[10000] = { 0 } ;
 	int s, client , bytes_read ;
 	unsigned int opt = sizeof(rem_addr ) ;
 	int i,j;
 	char ** data;
-	int n = 144171;
+	int n = 144171;													//ça commence bien mdr
 	char test[10000] = { 0 } ;
 	int mtu_value = 31240;
 	//Définition de la priorité du script en priorité temps réel
 
-	struct sched_param sched_p;                                                                 // Création d'une structure d'ordonancement temps réel pour le programme
+//Structure that describes scheduling parameters
+	struct sched_param sched_p;					// Création d'une structure d'ordonancement temps réel pour le programme
 
-	sched_p.sched_priority = 50;                                                                             // Affectation d'une priorité temps réel entre 0 et 99
+	sched_p.sched_priority = 50;                // Affectation d'une priorité temps réel entre 0 et 99
 
-	if(sched_setscheduler(0, SCHED_RR, &sched_p) == -1)  {                                            // Affectation d'un ordonancement Round-robin avec le paramètre de priorité défini précédemment si l'opération se passe sans erreur
+	if(sched_setscheduler(0, SCHED_RR, &sched_p) == -1)  {   // Affectation d'un ordonancement Round-robin avec le paramètre de priorité défini précédemment si l'opération se passe sans erreur
 
-		perror ("sched_setscheduler \n");                                                             // Sinon le programme se termine via la fonction perror()
+		perror ("sched_setscheduler \n");       // Sinon le programme se termine via la fonction perror()
 
 	}
 
@@ -193,7 +219,7 @@ int main(int argc , char ** argv){
 	
 	
 
-	set_l2cap_mtu(s , mtu_value ); // change la MTU à 10000
+	set_l2cap_mtu(s , mtu_value ); // change la MTU 
 
 
 	// bind socket to port 5 of the first available bluetooth adapter
@@ -211,9 +237,10 @@ int main(int argc , char ** argv){
 	client = accept (s , (struct sockaddr *)&rem_addr , &opt ) ;
 	
 
-
+    //Convert MAC addresses between string representation and little-endian byte arrays
 	ba2str ( &rem_addr.l2_bdaddr , buf ) ;
 
+	//write in the buffer
 	fprintf(stderr , "accepted connection from %s\n" , buf ) ;
 	memset(buf , 0, sizeof(buf ));
 
@@ -225,15 +252,18 @@ int main(int argc , char ** argv){
 	long tempsboucle = 0;
 	long temps_envoi = 0;
 	struct timeval start, end;
-	gettimeofday(&start, NULL);
+	// ATTENTION 2 - En fait ce ligne ci dessous c'est inutile
+	// ATTENTION 3 - LA COMPTAGE DES TEMPS N'EST PAS DE TOUT CORRECT
+	gettimeofday(&start, NULL); // ATTENTION c'est premiere temps donné une mauvaise moyenne, parce que c'est très different du prochaine temps, pas la même chose
 	while(check) {
-		bytes_read = recv (client , buf , sizeof(buf), 0);
+		bytes_read = recv (client , buf , sizeof(buf), 0); //recevoir le data du module connecté(client)
 		if( bytes_read > 0 ) {
-			if( strcmp(buf, "stop") == 0 ){
+			if( strcmp(buf, "stop") == 0 ){// quand on est arrivé a la fin du envoie
 				check = 0;
-			}else if(strcmp(buf, "next") == 0){
+			}else if(strcmp(buf, "next") == 0){// si y'en a encore des données
 				gettimeofday(&end, NULL);
-				temps_envoi = ((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec));
+				//ATTENTION tv_sec n'est pas égale a tv_usec, mais en second ? en dessus on fait simplement tv_sec*2, non?
+				temps_envoi = ((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)); 
 				tempsboucle+= temps_envoi;
 				printf("Temps pour n = %d : %ld micro seconds\n",k, temps_envoi);
 				fprintf(resultat, "%d : %ld ms\n",k, temps_envoi);
@@ -252,7 +282,7 @@ int main(int argc , char ** argv){
 		}
 	}
 	gettimeofday(&end, NULL);
-	tempsboucle += ((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec));
+	tempsboucle += ((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)); //*2
 	printf("Temps total moyen : %ld micro seconds\n", tempsboucle/10) ;
 	fprintf(resultat, "Moyenne : %ld ms \n", tempsboucle/10);
 	

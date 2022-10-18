@@ -8,6 +8,8 @@
 #include <time.h>
 #include <sys/time.h>
 
+
+// ATTENTION - FICHIER DUPLIQUE, ET AVEC MAUVAISES FONCTIONS
 char ** DataConvert ( char * lien ){
 
 	//ouverture fichier
