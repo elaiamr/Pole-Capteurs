@@ -7,6 +7,7 @@
 typedef struct {
     char ** data;
     int sizeLines;
+    int missingData;
 } data_lines ;
 
 data_lines DataConvert ( char * lien ){
@@ -16,14 +17,13 @@ data_lines DataConvert ( char * lien ){
 
     // Initialisations
     data_lines dataConverted;
-    size_t sizeColumns = 0;
-    size_t sizeLines = 0;
+    int sizeColumns = 0;
+    int sizeLines = 0;
     char currentChar;
     char ** data;
     int c1 = 1;  // compteur de lignes
     int c2 = 1;  // compteur de colonnes
     int c3 = 0;  // compteur annexe
-    int lostLines = 0;
 
     // Allocation mémoire initiale
     data = (char **) malloc (c1 * sizeof(char *));
@@ -41,12 +41,12 @@ data_lines DataConvert ( char * lien ){
             if (c1==2){      
                 c3 = c2;       // Stockage du nombre de colonnes "normal" du fichier
             } else {
-                if (c2 == c3 + 1 || c2 == c3 - 1){    // Présence (ou non) des - dans les données
+                if (c2 == c3 + 1 || c2 == c3 + 2 || c2 == c3 + 3 || c2 == c3 - 1 || c2 == c3 - 2 || c2 == c3 - 3){    // Présence (ou non) des - dans les données
                     c3 = c2;     // Stockage du nouveau nombre "normal" de colonnes
                 }
                 if (c2 != c3){
-                    printf("Il manque %d caracteres dans la ligne %d du fichier %s\n", abs(c2-c3), c1, lien);
-                    lostLines++;
+                    printf("Il manque %d caracteres dans la ligne %d du fichier %s\n", abs(c2-c3), c1-1, lien);
+                    dataConverted.missingData++;
                 }
             }
             c2 = 1;      // Retour à la première colonne
@@ -63,43 +63,48 @@ data_lines DataConvert ( char * lien ){
             data[c1 - 1] = (char *) realloc (data[c1 - 1], c2 * sizeof(char));
             data[c1 - 1][c2 - 2] = currentChar;
         }
-        if (c1 == 144171){
-            printf("%d ", c2);
-        }
     }
 
     // printf("Nombre de lignes du fichier %s: %d\n", lien, c1);
 
-    printf("%s\n", data[144170]);
+    //printf("%s\n", data[144170]);
 
     dataConverted.data = data;
-    dataConverted.sizeLines = c1-1;
+    dataConverted.sizeLines = c1;
 
     return dataConverted;
 }
 
 
-float errorRate(char ** data1, char ** data2, int sizeLines){
+float errorRate(data_lines data1, data_lines data2){
 
     float nb_errors = 0;
     float nb_data = 0;
 
-    int i = 0;
-    int j = 0;
-    for (i=0;i<sizeLines;i++){
-        printf("%c\n", data1[i][j]);
-        while (data1[i][j] != NULL && data2[i][j] != NULL){
-            nb_data++;
-            if (data1[i][j] != data2[i][j]){
-                nb_errors++;
+    float nb_loss = (abs(data1.sizeLines - data2.sizeLines) + data1.missingData + data2.missingData) / max(data1.sizeLines,data2.sizeLines);
+
+    if (nb_loss == 0){
+        int i = 0;
+        int j = 0;
+        for (i=0;i<sizeLines;i++){
+            //printf("%c\n", data1[i][j]);
+            while (data1[i][j] != NULL && data2[i][j] != NULL){
+                nb_data++;
+                if (data1[i][j] != data2[i][j]){
+                    nb_errors++;
+                }
+                j++;
             }
-            j++;
+            j=0;
         }
-        j=0;
+        // Calcul du taux d'erreur
+        float error_rate = nb_errors / nb_data * 100;
+        return nb_loss, error_rate;
+    } else {
+        printf("Taux de perte de %f\n", nb_loss);
+        return nb_loss;
     }
-    // Calcul du taux d'erreur
-    float error_rate = nb_errors / nb_data * 100;
-    return error_rate;
+    
 }
 
 
@@ -111,12 +116,13 @@ int main(){
     data_lines data3;
 
     // Conversion des fichiers txt
-    //data1 = DataConvert("Numerical_Results_capteur.txt");
+    data1 = DataConvert("Numerical_Results_capteur.txt");
     data2 = DataConvert("Numerical_Results_capteur_2.txt");
-    //data3 = DataConvert("Numerical_Results_capteur_3.txt");
+    data3 = DataConvert("Numerical_Results_capteur_3.txt");
 
     // Mise en application
-    printf("%s\n", data2.data[144170]);   // on a une erreur sur la toute dernière ligne
-    printf("%d\n",data2.sizeLines);
-    //printf("Taux d'erreur : %f\n", errorRate(data1.data, data3.data, data1.sizeLines));
+    //printf("%s\n", data1.data[144170-0]);   // on a une erreur sur la toute dernière ligne
+    //printf("%d\n",data1.sizeLines);
+    printf("%d\n", max(3,4));
+    printf("Taux d'erreur : %f\n", errorRate(data1, data2));
 }
