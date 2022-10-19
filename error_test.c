@@ -72,12 +72,12 @@ data_lines DataConvert ( char * lien ){
         }
     }
 
-    //printf("Nombre de mauvaises lignes : %d\n", dataConverted.missingLines);
-
     //printf("%s\n", data[144170]);
 
     dataConverted.data = data;
     dataConverted.sizeLines = c1;
+
+    //printf("Nombre de lignes : %d\n", dataConverted.sizeLines);
 
     return dataConverted;
 }
@@ -85,29 +85,37 @@ data_lines DataConvert ( char * lien ){
 
 float errorRate(data_lines data1, data_lines data2) {
 
-    int nb_errors = 0;
-    int nb_data = 0;
-    double loss_rate = 0;
+    float nb_errors = 0;
+    float nb_data = 0;
+    double loss_rate = 0.0;
     int minLines = 0;
     int maxColumns = 0;
     int deltaLines = 0;
     double error_rate = 0;
 
-    if (data1.sizeLines >= data2.sizeLines){
-        //printf("%d\n", data1.sizeLines - data2.sizeLines + data1.missingLines + data2.missingLines);
-        loss_rate = (data1.sizeLines - data2.sizeLines + data1.missingLines + data2.missingLines) / data1.sizeLines * 100;
-        minLines = data2.sizeLines;
-        deltaLines = data1.sizeLines - data2.sizeLines;
+    float Lines1 = data1.sizeLines;
+    float mLines1 = data1.missingLines;
+    float Lines2 = data2.sizeLines;
+    float mLines2 = data2.missingLines;
+    
+
+    if (Lines1 >= Lines2){
+        //printf("%d %d\n", Lines1 - Lines2 + mLines1 + mLines2, Lines1);
+        //printf("%f\n", (Lines1 - Lines2 + mLines1 + mLines2) / Lines1);
+        loss_rate = (Lines1 - Lines2 + mLines1 + mLines2) / Lines1 * 100;
+        //printf("lost rate : %lf\n", loss_rate);
+        minLines = Lines2;
+        deltaLines = Lines1 - Lines2;
         maxColumns = data1.sizeColumns;
     } else {
         //printf("%d\n", data2.sizeLines - data1.sizeLines + data1.missingLines + data2.missingLines);
-        loss_rate = (data2.sizeLines - data1.sizeLines + data1.missingLines + data2.missingLines) / data2.sizeLines * 100;
-        minLines = data1.sizeLines;
-        deltaLines = data2.sizeLines - data1.sizeLines;
+        loss_rate = (Lines2 - Lines1 + mLines1 + mLines2) / Lines2 * 100;
+        minLines = Lines1;
+        deltaLines = Lines2 - Lines1;
         maxColumns = data1.sizeColumns;
     }
 
-    printf("Taux de perte de %.100lf pourcents\n", loss_rate);
+    printf("Taux de perte de %.10lf pourcents\n", loss_rate);
 
     int i = 0;
     int j = 0;
@@ -133,7 +141,7 @@ float errorRate(data_lines data1, data_lines data2) {
     
     error_rate = nb_errors / nb_data * 100;
         
-    printf("Taux d'erreur de %.100lf pourcents\n", error_rate);
+    printf("Taux d'erreur de %.10lf pourcents\n", error_rate);
 
     return 0;
 }
@@ -149,7 +157,7 @@ int main(){
     // Conversion des fichiers txt
     data1 = DataConvert("Numerical_Results_capteur.txt");
     data2 = DataConvert("Numerical_Results_capteur_2.txt");
-    data3 = DataConvert("Numerical_Results_capteur_3.txt");
+    //data3 = DataConvert("Numerical_Results_capteur_3.txt");
 
     // Mise en application
     //printf("%s\n", data1.data[144170-0]);   // on a une erreur sur la toute dernière ligne
