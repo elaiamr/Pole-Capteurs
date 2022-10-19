@@ -9,30 +9,75 @@
 #include <sys/time.h>
 #include <errno.h>
 
-char ** DataConvert ( char * lien ){
+typedef struct {
+    char ** data;
+    int sizeLines;
+    int sizeColumns;
+    int missingLines;
+} data_lines;
 
-	//ouverture fichier
+data_lines DataConvert ( char * lien ){
+
+    // Ouverture du fichier
 	FILE * fichier = fopen(lien, "r");
 
-	assert (fichier != NULL);
+    // Initialisations
+    data_lines dataConverted;
+    dataConverted.data = NULL;
+    dataConverted.sizeColumns, dataConverted.sizeLines, dataConverted.missingLines = 0;
+    int sizeColumns, sizeLines = 0;
+    char currentChar;
+    char ** data;
+    int c1 = 1;  // compteur de lignes
+    int c2 = 1;  // compteur de colonnes
+    int c3 = 0;  // compteur annexe
 
-	char ** data;
-	int i,j,k,ind;
+    // Allocation mémoire initiale
+    data = (char **) malloc (c1 * sizeof(char *));
+    data[c1 - 1] = (char *) malloc (c2 * sizeof(char));
 
-	//allocation mémoire
-	data = (char **)malloc(144171 * sizeof(char *));
-	for (i = 0; i < 144171; i++){
-		data[i] = (char *)malloc(126 * sizeof(char ));
-	}
-	//lecture fichier
-	char chaine[126]; // cdc correspondant à 1 ligne
-	for(i=0;i<144171;i++){
-		fgets (chaine, 126, fichier);
-		strcpy(data[i], chaine);
-		printf("%d : %s \n",i, data[i]);
-		memset (chaine, 0, 126);
-	}
-	return data;
+    while ( ! feof(fichier)) {
+
+        // Récupération du caractère lu
+        currentChar = fgetc(fichier);
+        int currentInt = currentChar;
+
+        if (currentInt == 10) {    // Si on a un saut de ligne
+
+            c1++;
+            if (c1==2){      
+                c3 = c2;       // Stockage du nombre de colonnes "normal" du fichier
+                dataConverted.sizeColumns = c3;
+            } else {
+                if (c2 == c3 + 1 || c2 == c3 + 2 || c2 == c3 + 3 || c2 == c3 - 1 || c2 == c3 - 2 || c2 == c3 - 3){    // Présence (ou non) des - dans les données
+                    c3 = c2;     // Stockage du nouveau nombre "normal" de colonnes
+                    dataConverted.sizeColumns = c3;
+                }
+                if (c2 != c3){
+                    printf("Il manque %d caracteres dans la ligne %d du fichier %s\n", abs(c2-c3), c1-1, lien);
+                    dataConverted.missingLines++;
+                }
+            }
+            c2 = 1;      // Retour à la première colonne
+
+            // Réallocation mémoire pour la nouvelle ligne
+            data = (char **) realloc (data, c1 * sizeof(char *));
+            data [c1 - 1] = (char *) malloc (c2 * sizeof(char));
+
+        } else {
+
+            c2++;
+
+            // Réallocation mémoire pour la nouvelle colonne
+            data[c1 - 1] = (char *) realloc (data[c1 - 1], c2 * sizeof(char));
+            data[c1 - 1][c2 - 2] = currentChar;
+        }
+    }
+
+    dataConverted.data = data;
+    dataConverted.sizeLines = c1;
+
+    return dataConverted;
 }
 	 
 
@@ -48,7 +93,8 @@ int set_l2cap_mtu( int s , uint16_t mtu ) { //fonction qui change La MTU d'un so
 	return status ;
 };
 
-int envoie(char ** data){
+int envoie(data_lines data){
+
 	//Création du socket dans le but de connecter entre elles les 2 raspberry
 	struct sockaddr_l2 addr = { 0 } ;
 	int s , status ;
@@ -82,10 +128,10 @@ int envoie(char ** data){
 		printf("Connexion réussie\n");
 		gettimeofday(&start, NULL);
 		for (k=0;k<10;k++){
-			for (i=0; i<144171;i+=32){//ATTENTION - il utilise la taille ordinaire déjà, c'est meilleur de definir une fonction aussi(on peut mal compter) 
+			for (i=0; i<data.sizeLines;i+=32){//ATTENTION - il utilise la taille ordinaire déjà, c'est meilleur de definir une fonction aussi(on peut mal compter) 
 				memset (paquet, 0, mtu_value);  // ATTENTION  - s'il fait la substituition de tous les 0s, il change aussi les donnés 
 				for(j=0; j<32; j++){
-					strcat (paquet, data[i+j]); //ATTENTION - Si data c'est un char **, on envoie a chaque packet 32 lignes ? pq?
+					strcat (paquet, data.data[i+j]); //ATTENTION - Si data c'est un char **, on envoie a chaque packet 32 lignes ? pq?
 					//strcat (paquet, "\n");
 				}
 				//printf("Envoie ligne %d \n", i);
@@ -110,7 +156,7 @@ int envoie(char ** data){
 
 int main(int argc , char ** argv){
 
-	char ** data;
+	data_lines data;
 	data = DataConvert("/home/pi/Desktop/Numerical_Results_capteur_v1.txt");
 
 	envoie(data);

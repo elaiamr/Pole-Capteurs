@@ -26,6 +26,13 @@ if (err != 0)  {                                                                
 
 }*/
 
+typedef struct {
+    char ** data;
+    int sizeLines;
+    int sizeColumns;
+    int missingLines;
+} data_lines;
+
 //fonction avec la librarie bluetooth
 int set_l2cap_mtu( int s , uint16_t mtu ) { 
 	struct l2cap_options opts ; 													//struct des packets bluetooth
@@ -38,159 +45,138 @@ int set_l2cap_mtu( int s , uint16_t mtu ) {
 	return status ;
 }
 
-char ** DataConvert ( char * lien ){
+data_lines DataConvert ( char * lien ){
 
-	//ouverture fichier
+    // Ouverture du fichier
 	FILE * fichier = fopen(lien, "r");
 
-	assert (fichier != NULL);
+    // Initialisations
+    data_lines dataConverted;
+    dataConverted.data = NULL;
+    dataConverted.sizeColumns, dataConverted.sizeLines, dataConverted.missingLines = 0;
+    int sizeColumns, sizeLines = 0;
+    char currentChar;
+    char ** data;
+    int c1 = 1;  // compteur de lignes
+    int c2 = 1;  // compteur de colonnes
+    int c3 = 0;  // compteur annexe
 
-	char ** data;
-	int i,j,k,ind;
+    // Allocation mémoire initiale
+    data = (char **) malloc (c1 * sizeof(char *));
+    data[c1 - 1] = (char *) malloc (c2 * sizeof(char));
 
-	//allocation mémoire
-	data = (char **)malloc(144171 * sizeof(char *));
-	for (i= 0; i < 144171; i++){
-		data[i] = (char *)malloc(126 * sizeof(char ));
-	}
-	//lecture fichier
-	char chaine[126]; // cdc correspondant à 1 ligne
-	for(i=0;i<144171;i++){
-		fgets (chaine, 126, fichier);
-		strcpy(data[i], chaine);
-		memset (chaine, 0, 126);
-	}
-	return data;
-}
+    while ( ! feof(fichier)) {
 
-int sizeLines(char ** data){
-    int size = 0;
-    while (data[size] != NULL) {
-        size++;
+        // Récupération du caractère lu
+        currentChar = fgetc(fichier);
+        int currentInt = currentChar;
+
+        if (currentInt == 10) {    // Si on a un saut de ligne
+
+            c1++;
+            if (c1==2){      
+                c3 = c2;       // Stockage du nombre de colonnes "normal" du fichier
+                dataConverted.sizeColumns = c3;
+            } else {
+                if (c2 == c3 + 1 || c2 == c3 + 2 || c2 == c3 + 3 || c2 == c3 - 1 || c2 == c3 - 2 || c2 == c3 - 3){    // Présence (ou non) des - dans les données
+                    c3 = c2;     // Stockage du nouveau nombre "normal" de colonnes
+                    dataConverted.sizeColumns = c3;
+                }
+                if (c2 != c3){
+                    printf("Il manque %d caracteres dans la ligne %d du fichier %s\n", abs(c2-c3), c1-1, lien);
+                    dataConverted.missingLines++;
+                }
+            }
+            c2 = 1;      // Retour à la première colonne
+
+            // Réallocation mémoire pour la nouvelle ligne
+            data = (char **) realloc (data, c1 * sizeof(char *));
+            data [c1 - 1] = (char *) malloc (c2 * sizeof(char));
+
+        } else {
+
+            c2++;
+
+            // Réallocation mémoire pour la nouvelle colonne
+            data[c1 - 1] = (char *) realloc (data[c1 - 1], c2 * sizeof(char));
+            data[c1 - 1][c2 - 2] = currentChar;
+        }
     }
-    return size;
-}
 
-int sizeColumns(char ** data, int i){
-    int size = 0;
-    while (data[i][size]) {
-        size++;
-    }
-    return size;
+    dataConverted.data = data;
+    dataConverted.sizeLines = c1;
+
+    return dataConverted;
 }
 
 //Fonction taux d'erreur
-float Error_Rate_Fct(char * final_data, char * initial_data){
+int errorRate(data_lines data1, data_lines data2) {
 
+	// Initialisations
+    float nb_errors, nb_data = 0;
+    double loss_rate, error_rate = 0.0;
+    int minLines, maxColumns, deltaLines = 0;
+
+	// Transformations en float (pour les divisions)
+    float Lines1 = data1.sizeLines;
+    float mLines1 = data1.missingLines;
+    float Lines2 = data2.sizeLines;
+    float mLines2 = data2.missingLines;
     
-    char ** data_i = DataConvert(initial_data);						// Ouverture du fichier envoyé
-    char ** data_f = DataConvert(final_data);    					// Ouverture du fichier reçu
-
-    float nb_errors = 0;
-    float nb_data = 0;
-
-    int i = 0;
-    int j = 0;
-
-   
-    int nb_lignes_i = sizeLines(data_i); 							// Récupération du nombre de lignes
-    for (i=0;i<nb_lignes_i;i++){									//verifier tous les lignes
-        int nb_colonnes_i = sizeColumns(data_i,i);					//Récupération du nombre de colonnes
-        for (j=0;j<nb_colonnes_i;j++){								//verifier tous les colonnes
-			nb_data++;												// On compte le nombre des données dans la fonction
-			if (data_i[i][j] != data_f[i][j]){
-				nb_errors++;										// On compte le nombre d'erreurs dans la fonction
-			}
-		}
+	// Calcul du taux de perte
+    if (Lines1 >= Lines2){   // le fichier 1 est plus long que le 2 (ou de même taille)
+        loss_rate = (Lines1 - Lines2 + mLines1 + mLines2) / Lines1 * 100;
+        minLines = Lines2;
+        deltaLines = Lines1 - Lines2;
+        maxColumns = data1.sizeColumns;
+    } else {				 // le fichier 2 est plus long que le 2
+        loss_rate = (Lines2 - Lines1 + mLines1 + mLines2) / Lines2 * 100;
+        minLines = Lines1;
+        deltaLines = Lines2 - Lines1;
+        maxColumns = data1.sizeColumns;
     }
 
+    printf("Taux de perte de %.10lf pourcents\n", loss_rate);
 
-    float error_rate = nb_errors / nb_data * 100;    				// Calcul du taux d'erreur
-    return error_rate;
-}
+	// Initialisations
+    int i, j = 0;
 
-
-//Fonction taux de pertes
-float loss_rate_Fct(char * final_data, char * initial_data){		
-
-    char ** data_i = DataConvert(initial_data);						// Ouverture du fichier envoyé
-    char ** data_f = DataConvert(final_data);    					// Ouverture du fichier reçu
-   ,// char ** data_tmp;    										// variable temporaire
-
-    float nb_loss = 0;
-    float nb_data = 0;
-
-    int i = 0;
-    int j = 0;
-
-    int nb_lignes_i = sizeLines(data_i);
-    int nb_lignes_f = sizeLines(data_f);
-/*
-	float loss_rate = 1;
-	
-
-    if (nb_lignes_i > nb_lignes_f) { //si lignes plus grandes, inverte les donné pour eviter des erreus dans la prochaine fonction
-		data_tmp = data_i;
-		data_i = data_f;
-		data_f = data_tmp;
-	}
-	nb_loss = nb_loss + (nb_lignes_f - nb_lignes_i);
-    nb_data = nb_lignes_f * 5;
-	// en vrai tous les trucs au dessus sont inutiles
-
-
-    int nb_donnees_i = sizeColumns(data_i,nb_lignes_i-1);   //on prend la dernière ligne
-    nb_loss = nb_loss + (5-nb_donnees_i);   //en gros on vérifie que la dernière soit bien composée de 5 données sinon on ajoute
- 
- 	if(nb_lignes_i != nb_lignes_f)
-		loss_rate = nb_loss / nb_data * 100; // ça va compter tjrs juste la dernière ligne, n'importe la taile de nb_data
-		
-	return loss_rate
-*/
-
-/*
-cette fonction y'a pas du sense
-
-1 -d'abbord elle repète le même code deux fois
-
-2 -  elle compte la difference entre la quantité de colonnes et lignes (????????)
-3 - elle multiplie par 5 la quantité des lignes (?)
-4 - nb_donnes*/
-    if (nb_lignes_i > nb_lignes_f) {
-        nb_loss = nb_loss + (nb_lignes_i - nb_lignes_f); // 100% inutile
-        nb_data = nb_lignes_i * 5; // 100% inutile
-        int nb_donnees_f = sizeColumns(data_f,nb_lignes_f-1);   //on prend la dernière ligne
-        nb_loss = nb_loss + (5-nb_donnees_f);   //en gros on vérifie que la dernière soit bien composée de 5 données sinon on ajoute
-
-    } else if (nb_lignes_i < nb_lignes_f) {
-        nb_loss = nb_loss + (nb_lignes_f - nb_lignes_i); // 100% inutile
-        nb_data = nb_lignes_f * 5; // 100% inutile
-        int nb_donnees_i = sizeColumns(data_i,nb_lignes_i-1);   //on prend la dernière ligne
-        nb_loss = nb_loss + (5-nb_donnees_i);   //en gros on vérifie que la dernière soit bien composée de 5 données sinon on ajoute
-    
-    } else {
-        nb_loss = 0;
-        nb_data = 100;    // arbitraire pour éviter la division par 0
+	// Calcul du taux d'erreur
+    for (i=0;i<minLines;i++){    // On doit prendre la plus petite longueur de fichier pour éviter les bugs
+        for (j=0;j<maxColumns;j++){
+            nb_data++;
+            if (data1.data[i][j] != data2.data[i][j]){      // Si les char sont différents
+                nb_errors++;
+            }
+        }
     }
 
-    float loss_rate = nb_loss / nb_data * 100;
-    return loss_rate;
+    // Ajout des lignes manquantes (car on a pris la plus petite longueur de fichier)
+    nb_errors += deltaLines * maxColumns;
+    
+    error_rate = nb_errors / nb_data * 100;
+        
+    printf("Taux d'erreur de %.10lf pourcents\n", error_rate);
 
+    return 0;
 }
 
 int main(int argc , char ** argv){
+
 	struct sockaddr_l2 loc_addr = { 0 } , rem_addr = { 0 } ; // struct de socket
 	char buf[10000] = { 0 } ;
 	int s, client , bytes_read ;
 	unsigned int opt = sizeof(rem_addr ) ;
 	int i,j;
-	char ** data;
-	int n = 144171;													//ça commence bien mdr
+	data_lines data;
+
+	data_lines initial_data = DataConvert("/home/pi/Documents/Numerical_Results_capteur.txt");
+
 	char test[10000] = { 0 } ;
 	int mtu_value = 31240;
 	//Définition de la priorité du script en priorité temps réel
 
-//Structure that describes scheduling parameters
+	//Structure that describes scheduling parameters
 	struct sched_param sched_p;					// Création d'une structure d'ordonancement temps réel pour le programme
 
 	sched_p.sched_priority = 50;                // Affectation d'une priorité temps réel entre 0 et 99
@@ -210,8 +196,8 @@ int main(int argc , char ** argv){
 
 	//allocation mémoire
 	data = (char **)malloc(n * sizeof(char *));
-	for (i=0; i<n; i++){
-		data[i] = (char *)calloc(126 , sizeof(char));
+	for (i=0; i<initial_data.sizeLines; i++){
+		data[i] = (char *)calloc(initial_data.sizeColumns, sizeof(char));
 	}
 
 	//création socket
@@ -285,18 +271,10 @@ int main(int argc , char ** argv){
 	tempsboucle += ((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)); //*2
 	printf("Temps total moyen : %ld micro seconds\n", tempsboucle/10) ;
 	fprintf(resultat, "Moyenne : %ld ms \n", tempsboucle/10);
-	
-	char * initial_data = "/home/pi/Documents/Numerical_Results_capteur.txt";
-	char * final_data = "/home/pi/Documents/test.txt";
 
-	float marge = 0; 	//marge d'erreur acceptable, à définir
-	float loss_rate = loss_rate_Fct(final_data, initial_data);
-	printf("Taux de perte : %f pourcents \n", loss_rate);
+	data_lines final_data = DataConvert("/home/pi/Documents/test.txt");
 
-	if (loss_rate <= marge) {
-		float error_rate = Error_Rate_Fct(final_data, initial_data);
-		printf("Taux d'erreur : %f pourcents \n", error_rate);
-	}
+	errorRate(initial_data,final_data);
 
 	close (client) ;
 	close (s) ; 
