@@ -1,7 +1,7 @@
 import os
 from time import sleep
 
-MTU_Sizes = [80,600,2000,3200,6000,12800,24000,35600,49600,59400,65520]
+MTU_Sizes = [80,600,2000,3200,6000,12800,24000,35600,49600,59400,65520]   # à revoir - les Mathis
 for i, MTU_Size in zip(range(len(MTU_Sizes)), MTU_Sizes):
     sleep(5)
     dossier = "C:/Users/flaph/OneDrive/Documents/GitHub-PERSEUS/Pole-Capteurs/client"
@@ -9,8 +9,6 @@ for i, MTU_Size in zip(range(len(MTU_Sizes)), MTU_Sizes):
     file = str(dossier) + "/" + str(filename) + ".c"
 
     f = open(file, "w")
-
-    #MTU_Size = 15620
 
     print("#include <stdio.h>\n#include <stdlib.h>\n#include <unistd.h>\n#include <sys/socket.h>\n#include <bluetooth/bluetooth.h>\n#include <bluetooth/l2cap.h>\n#include <assert.h>\n#include <time.h>\n#include <sys/time.h>\n#include <errno.h>\n\nchar ** DataConvert ( char * lien ){\n\n	//ouverture fichier\n	FILE * fichier = fopen(lien, \"r\");\n\n	assert (fichier != NULL);\n\n	char ** data;\n	int i,j,k,ind;\n\n	//allocation memoire\n	data = (char **)malloc(6248 * sizeof(char *));\n	for (i = 0; i < 6248; i++){\n		data[i] = (char *)malloc(130 * sizeof(char ));\n	}\n	//lecture fichier\n	char chaine[130]; // cdc correspondant a 1 ligne\n	for(i=0;i<6248;i++){\n		fgets (chaine, 130, fichier);\n		strcpy(data[i], chaine);\n		printf(\"%d : %s \\n\",i, data[i]);\n		memset (chaine, 0, 130);\n	}\n	return data;\n}\n	 \n\nint set_l2cap_mtu( int s , uint16_t mtu ) { //fonction qui change La MTU d'un socket\n\n	struct l2cap_options opts ;\n	int optlen = sizeof(opts ) ;\n	int status = getsockopt(s, SOL_L2CAP, L2CAP_OPTIONS, &opts, &optlen);\n	if( status == 0) {\n		opts.omtu = opts.imtu = mtu ;\n		status = setsockopt( s , SOL_L2CAP , L2CAP_OPTIONS , &opts ,optlen ) ;\n	}\n	return status ;\n};\n\nint envoie(char ** data){\n	//Creation du socket dans le but de connecter entre elles les 2 raspberry\n	struct sockaddr_l2 addr = { 0 } ;\n	int s , status ;\n	char dest[18] = \"DC:A6:32:78:6C:7E\";\n	//de:81:c6:b4:7c:5f:46:58\n	// allocate a socket\n	s = socket(AF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP) ;\n", file=open(file, "a"))
                 

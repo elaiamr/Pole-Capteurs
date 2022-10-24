@@ -1,7 +1,7 @@
 import os
 from time import sleep
 
-MTU_Sizes = [80,600,2000,3200,6000,12800,24000,35600,49600,59400,65520]
+MTU_Sizes = [80,600,2000,3200,6000,12800,24000,35600,49600,59400,65520]   # à revoir - les Mathis
 TransmissionRate = []
 for i, MTU_Size in zip(range(len(MTU_Sizes)), MTU_Sizes):
     

@@ -10,47 +10,48 @@
 #include <errno.h>
 
 typedef struct {
-    char ** data;
-    int sizeLines;
-    int sizeColumns;
-    int missingLines;
+    char ** data;		//Ensemble de données
+    int sizeLines;		//Nombre de lignes de données
+    int sizeColumns;	//Nombre de colonnes de données
+    int missingLines;	//Nombre de lignes incomplètes
 } data_lines;
 
-data_lines DataConvert ( char * lien ){
+data_lines DataConvert ( char * lien ){    //Fonction de conversion des fichiers txt en char **
 
-    // Ouverture du fichier
+    //Ouverture du fichier
 	FILE * fichier = fopen(lien, "r");
 
-    // Initialisations
+    //Initialisations
     data_lines dataConverted;
+	char ** data;
     dataConverted.data = NULL;
     dataConverted.sizeColumns, dataConverted.sizeLines, dataConverted.missingLines = 0;
     int sizeColumns, sizeLines = 0;
-    char currentChar;
-    char ** data;
-    int c1 = 1;  // compteur de lignes
-    int c2 = 1;  // compteur de colonnes
-    int c3 = 0;  // compteur annexe
+    char currentChar;    //Caractère lu actuellement
+    int c1 = 1;  //Compteur de lignes
+    int c2 = 1;  //Compteur de colonnes
+    int c3 = 0;  //Compteur annexe
 
-    // Allocation mémoire initiale
+    //Allocation mémoire initiale
     data = (char **) malloc (c1 * sizeof(char *));
     data[c1 - 1] = (char *) malloc (c2 * sizeof(char));
 
-    while ( ! feof(fichier)) {
+    while ( ! feof(fichier)) {  //Tant qu'on est pas arrivés à la fin du fichier
 
-        // Récupération du caractère lu
+        //Récupération du caractère lu
         currentChar = fgetc(fichier);
         int currentInt = currentChar;
 
-        if (currentInt == 10) {    // Si on a un saut de ligne
+        if (currentInt == 10) {    //Si on a un saut de ligne (car int "\n" = 10)
 
             c1++;
+
             if (c1==2){      
-                c3 = c2;       // Stockage du nombre de colonnes "normal" du fichier
+                c3 = c2;       //Stockage du nombre de colonnes "normal" du fichier
                 dataConverted.sizeColumns = c3;
             } else {
-                if (c2 == c3 + 1 || c2 == c3 + 2 || c2 == c3 + 3 || c2 == c3 - 1 || c2 == c3 - 2 || c2 == c3 - 3){    // Présence (ou non) des - dans les données
-                    c3 = c2;     // Stockage du nouveau nombre "normal" de colonnes
+                if (c2 == c3 + 1 || c2 == c3 + 2 || c2 == c3 + 3){    // Présence (ou non) des - dans les données
+                    c3 = c2;     //Stockage du nouveau nombre "normal" de colonnes
                     dataConverted.sizeColumns = c3;
                 }
                 if (c2 != c3){
@@ -58,9 +59,9 @@ data_lines DataConvert ( char * lien ){
                     dataConverted.missingLines++;
                 }
             }
-            c2 = 1;      // Retour à la première colonne
+            c2 = 1;      //Retour à la première colonne
 
-            // Réallocation mémoire pour la nouvelle ligne
+            //Réallocation mémoire pour la nouvelle ligne
             data = (char **) realloc (data, c1 * sizeof(char *));
             data [c1 - 1] = (char *) malloc (c2 * sizeof(char));
 
@@ -68,7 +69,7 @@ data_lines DataConvert ( char * lien ){
 
             c2++;
 
-            // Réallocation mémoire pour la nouvelle colonne
+            //Réallocation mémoire pour la nouvelle colonne
             data[c1 - 1] = (char *) realloc (data[c1 - 1], c2 * sizeof(char));
             data[c1 - 1][c2 - 2] = currentChar;
         }
@@ -80,8 +81,7 @@ data_lines DataConvert ( char * lien ){
     return dataConverted;
 }
 	 
-
-int set_l2cap_mtu( int s , uint16_t mtu ) { //fonction qui change La MTU d'un socket
+int set_l2cap_mtu( int s , uint16_t mtu ) { //Fonction qui change le MTU d'un socket
 
 	struct l2cap_options opts ;
 	int optlen = sizeof(opts ) ;
@@ -93,64 +93,63 @@ int set_l2cap_mtu( int s , uint16_t mtu ) { //fonction qui change La MTU d'un so
 	return status ;
 };
 
-int envoie(data_lines data){
+int envoie(data_lines data){   //Fonction d'envoi de données
 
 	//Création du socket dans le but de connecter entre elles les 2 raspberry
 	struct sockaddr_l2 addr = { 0 } ;
 	int s , status ;
 	char dest[18] = "DC:A6:32:78:6C:7E";
-	//de:81:c6:b4:7c:5f:46:58
-	// allocate a socket
+
+	//Allocation du socket
 	s = socket(AF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP) ;
 
-	int mtu_value = 15620;
-
+	//Modification du MTU
+	int mtu_value = 15620;    //Valeur modifiée par le fichier python
    	set_l2cap_mtu( s , mtu_value );
 
-	// set the connection parameters (who to connect to)
+	//Connexion entre les 2 raspberry
 	addr.l2_family = AF_BLUETOOTH;
 	addr.l2_psm = htobs(0x1001);
 	str2ba( dest , &addr.l2_bdaddr ) ;
-	
-	// connect to server
 	status = connect (s , (struct sockaddr *)&addr , sizeof(addr ));
 
-	// send a message
-
-	int i,j,k;
-	k = 0;
-	struct timeval start, end;
-
-	char paquet[mtu_value] = {0};
+	//Initialisations d'envoi
+	int i,j,k=0;
+	struct timeval start, end;   //Initialisation de variables de temps
+	char paquet[mtu_value];
+	memset(paquet,0,mtu_value * sizeof(char));   //Initialisation du paquet avec des zéros
 	
-
+	//Envoi de données
 	if( 0 == status ) {
 		printf("Connexion réussie\n");
-		gettimeofday(&start, NULL);
+		gettimeofday(&start, NULL);			//Initialisation du temps de départ
 		for (k=0;k<10;k++){
-			for (i=0; i<data.sizeLines;i+=32){//ATTENTION - il utilise la taille ordinaire déjà, c'est meilleur de definir une fonction aussi(on peut mal compter) 
-				memset (paquet, 0, mtu_value);  // ATTENTION  - s'il fait la substituition de tous les 0s, il change aussi les donnés 
-				for(j=0; j<32; j++){
-					strcat (paquet, data.data[i+j]); //ATTENTION - Si data c'est un char **, on envoie a chaque packet 32 lignes ? pq?
-					//strcat (paquet, "\n");
+            int nb_data = 0;                //Nombre de données déjà inscrites dans le paquet
+			for (i=0; i<data.sizeLines;i++){
+                if (nb_data + data.sizeColumns > mtu_value){        //On prend le parti de ne pas transmettre des bouts partiels de ligne
+                    send(s, paquet, mtu_value, 0);                  //le MTU étant normalement une valeur proportionnelle du nombre de lignes
+                    memset (paquet, 0, mtu_value * sizeof(char));   //Réinitialisation du paquet
+                    nb_data = 0;                                    //Remise à zéro du nombre de données dans le paquet
+                }
+				for(j=0; j<data.sizeColumns; j++){
+                    nb_data++;                          //Incrémentation du nombre de données ajoutées à paquet
+					strcat (paquet, data.data[i][j]);   //Ajout du caractère à paquet
 				}
-				//printf("Envoie ligne %d \n", i);
-				send(s, paquet, mtu_value, 0);
 			}			
-			send(s, "next",4,0); // ATTENTION - je propose de change "next" par un autre chose utile, par exemple /0 ou /1
+			send(s, "next",4,0); //Fin du fichier
 
 		}	
-		send(s,"stop",4,0);
-		gettimeofday(&end, NULL);
+		send(s,"stop",4,0);  //Fin de la 10ème transmission du fichier
+		gettimeofday(&end, NULL);		//Initialisation du temps de fin
 		printf("Temps total : %ld micro seconds\n",
 		((end.tv_sec * 1000000 + end.tv_usec) -
-		(start.tv_sec * 1000000 + start.tv_usec)));// ATTENTION - fois 2
+		(start.tv_sec * 1000000 + start.tv_usec)));  //Temps total de transmission
 	}
 	if( status < 0 ) {
 		fprintf(stderr, "error code %d: %s\n", errno, strerror(errno));
-		perror( "Connexion echouée" ) ;
+		perror( "Connexion echouée\n" );
 	}
-	close (s ) ;
+	close (s);  //Fermeture du socket
 	return 0;
 }
 
