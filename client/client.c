@@ -35,7 +35,6 @@ data_lines DataConvert ( char * lien ){    //Fonction de conversion des fichiers
     //Allocation mémoire initiale
     data = (char **) malloc (c1 * sizeof(char *));
     data[c1 - 1] = (char *) malloc (c2 * sizeof(char));
-
     while ( ! feof(fichier)) {  //Tant qu'on est pas arrivés à la fin du fichier
 
         //Récupération du caractère lu
@@ -50,7 +49,7 @@ data_lines DataConvert ( char * lien ){    //Fonction de conversion des fichiers
                 c3 = c2;       //Stockage du nombre de colonnes "normal" du fichier
                 dataConverted.sizeColumns = c3;
             } else {
-                if (c2 == c3 + 1 || c2 == c3 + 2 || c2 == c3 + 3){    // Présence (ou non) des - dans les données
+                if (c2 == c3 + 1 || c2 == c3 + 2 || c2 == c3 + 3 || c2 == c3 - 1 || c2 == c3 - 2 || c2 == c3 - 3){    // Présence (ou non) des - dans les données
                     c3 = c2;     //Stockage du nouveau nombre "normal" de colonnes
                     dataConverted.sizeColumns = c3;
                 }
@@ -64,7 +63,6 @@ data_lines DataConvert ( char * lien ){    //Fonction de conversion des fichiers
             //Réallocation mémoire pour la nouvelle ligne
             data = (char **) realloc (data, c1 * sizeof(char *));
             data [c1 - 1] = (char *) malloc (c2 * sizeof(char));
-
         } else {
 
             c2++;
@@ -77,7 +75,6 @@ data_lines DataConvert ( char * lien ){    //Fonction de conversion des fichiers
 
     dataConverted.data = data;
     dataConverted.sizeLines = c1;
-
     return dataConverted;
 }
 	 
@@ -104,7 +101,7 @@ int envoie(data_lines data){   //Fonction d'envoi de données
 	s = socket(AF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP) ;
 
 	//Modification du MTU
-	int mtu_value = 15620;    //Valeur modifiée par le fichier python
+	int mtu_value = 15620;    //Valeur modifiée par le fichier python (15620)
    	set_l2cap_mtu( s , mtu_value );
 
 	//Connexion entre les 2 raspberry
@@ -115,7 +112,7 @@ int envoie(data_lines data){   //Fonction d'envoi de données
 
 	//Initialisations d'envoi
 	int i,j,k=0;
-	struct timeval start, end;   //Initialisation de variables de temps
+	struct timeval start, end, start_int1, end_int1, start_int2, end_int2, start_int3, end_int3;   //Initialisation de variables de temps
 	char paquet[mtu_value];
 	memset(paquet,0,mtu_value * sizeof(char));   //Initialisation du paquet avec des zéros
 	
@@ -124,19 +121,29 @@ int envoie(data_lines data){   //Fonction d'envoi de données
 		printf("Connexion réussie\n");
 		gettimeofday(&start, NULL);			//Initialisation du temps de départ
 		for (k=0;k<10;k++){
-            int nb_data = 0;                //Nombre de données déjà inscrites dans le paquet
-			for (i=0; i<data.sizeLines;i++){
-                if (nb_data + data.sizeColumns > mtu_value){        //On prend le parti de ne pas transmettre des bouts partiels de ligne
-                    send(s, paquet, mtu_value, 0);                  //le MTU étant normalement une valeur proportionnelle du nombre de lignes
-                    memset (paquet, 0, mtu_value * sizeof(char));   //Réinitialisation du paquet
-                    nb_data = 0;                                    //Remise à zéro du nombre de données dans le paquet
-                }
-				for(j=0; j<data.sizeColumns; j++){
-                    nb_data++;                          //Incrémentation du nombre de données ajoutées à paquet
-					strcat (paquet, data.data[i][j]);   //Ajout du caractère à paquet
-				}
-			}			
-			send(s, "next",4,0); //Fin du fichier
+		    int nb_data = data.sizeColumns*62;                //Nombre de données déjà inscrites dans le paquet
+		    gettimeofday(&start_int1, NULL);
+		    for (i=0; i<data.sizeLines;i++){
+			gettimeofday(&start_int2, NULL);
+			if (nb_data > mtu_value){        //On prend le parti de ne pas transmettre des bouts partiels de ligne
+			    send(s, paquet, mtu_value, 0);                  //le MTU étant normalement une valeur proportionnelle du nombre de lignes
+			    memset (paquet, 0, mtu_value * sizeof(char));   //Réinitialisation du paquet
+			    nb_data = data.sizeColumns*62;                                    //Remise à zéro du nombre de données dans le paquet
+			}
+			gettimeofday(&end_int2, NULL);
+			printf("Temps if : %d\n", (end_int2.tv_sec * 1000000 + end_int2.tv_usec) - (start_int2.tv_sec * 1000000 + start_int2.tv_usec));
+			gettimeofday(&start_int3, NULL);
+			for(j=0; j<data.sizeColumns; j++){
+			    nb_data+=62;                          //Incrémentation du nombre de données ajoutées à paquet
+			    strcat (paquet,&data.data[i][j]);   //Ajout du caractère à paquet
+			}
+			gettimeofday(&end_int3, NULL);
+			printf("Temps for : %d\n", (end_int3.tv_sec * 1000000 + end_int3.tv_usec) - (start_int3.tv_sec * 1000000 + start_int3.tv_usec));
+		    }	
+		    gettimeofday(&end_int1, NULL);
+		    printf("Temps FOR : %d\n", (end_int1.tv_sec * 1000000 + end_int1.tv_usec) - (start_int1.tv_sec * 1000000 + start_int1.tv_usec));		
+		    send(s, "next",4,0); //Fin du fichier
+		    memset(paquet, 0, mtu_value * sizeof(char));
 
 		}	
 		send(s,"stop",4,0);  //Fin de la 10ème transmission du fichier
@@ -156,7 +163,7 @@ int envoie(data_lines data){   //Fonction d'envoi de données
 int main(int argc , char ** argv){
 
 	data_lines data;
-	data = DataConvert("/home/pi/Desktop/Numerical_Results_capteur_v1.txt");
-
+	data = DataConvert("/home/pi/Desktop/Numerical_Results_capteur.txt");
 	envoie(data);
+	
 }

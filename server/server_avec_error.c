@@ -31,11 +31,11 @@ int set_l2cap_mtu( int s , uint16_t mtu ) { //Fonction qui change le MTU d'un so
 data_lines DataConvert ( char * lien ){    //Fonction de conversion des fichiers txt en char **
 
     //Ouverture du fichier
-	FILE * fichier = fopen(lien, "r");
+    FILE * fichier = fopen(lien, "r");
 
     //Initialisations
     data_lines dataConverted;
-	char ** data;
+    char ** data;
     dataConverted.data = NULL;
     dataConverted.sizeColumns, dataConverted.sizeLines, dataConverted.missingLines = 0;
     int sizeColumns, sizeLines = 0;
@@ -62,7 +62,7 @@ data_lines DataConvert ( char * lien ){    //Fonction de conversion des fichiers
                 c3 = c2;       //Stockage du nombre de colonnes "normal" du fichier
                 dataConverted.sizeColumns = c3;
             } else {
-                if (c2 == c3 + 1 || c2 == c3 + 2 || c2 == c3 + 3){    // Présence (ou non) des - dans les données
+                if (c2 == c3 + 1 || c2 == c3 + 2 || c2 == c3 + 3 || c2 == c3 - 1 || c2 == c3 - 2 || c2 == c3 - 3){    // Présence (ou non) des - dans les données
                     c3 = c2;     //Stockage du nouveau nombre "normal" de colonnes
                     dataConverted.sizeColumns = c3;
                 }
@@ -89,24 +89,24 @@ data_lines DataConvert ( char * lien ){    //Fonction de conversion des fichiers
 
     dataConverted.data = data;
     dataConverted.sizeLines = c1;
-
+    
     return dataConverted;
 }
 
 int errorRate(data_lines data1, data_lines data2) {    //Fonction calculant le taux de perte et d'erreur dans la transmission
 
-	//Initialisations
+    //Initialisations
     float nb_errors, nb_data = 0;
     double loss_rate, error_rate = 0.0;
     int minLines, maxColumns, deltaLines = 0;
 
-	//Transformations en float (pour les divisions)
+    //Transformations en float (pour les divisions)
     float Lines1 = data1.sizeLines;
     float mLines1 = data1.missingLines;
     float Lines2 = data2.sizeLines;
     float mLines2 = data2.missingLines;
     
-	//Calcul du taux de perte
+    //Calcul du taux de perte
     if (Lines1 >= Lines2){   //Le fichier 1 est plus long que le 2 (ou de même taille)
         loss_rate = (Lines1 - Lines2 + mLines1 + mLines2) / Lines1 * 100;
         minLines = Lines2;
@@ -119,10 +119,10 @@ int errorRate(data_lines data1, data_lines data2) {    //Fonction calculant le t
         maxColumns = data1.sizeColumns;
     }
 
-	//Calcul du taux de perte de données
+    //Calcul du taux de perte de données
     printf("Taux de perte de %.10lf pourcents\n", loss_rate);
 
-	//Initialisations
+    //Initialisations
     int i, j = 0;
 
 	//Calcul du taux d'erreur
@@ -149,7 +149,7 @@ int main(int argc , char ** argv){   //Fonction de réception des données
 
 	//Création du socket de réception et initialisations des données
 	struct sockaddr_l2 loc_addr = { 0 } , rem_addr = { 0 } ; // struct de socket
-	int s, client , bytes_read ;
+	int s=0, client , bytes_read ;
 	unsigned int opt = sizeof(rem_addr ) ;
 	int i,j=0;
 	data_lines data;
@@ -182,9 +182,9 @@ int main(int argc , char ** argv){   //Fonction de réception des données
 	resultat = fopen("result.txt","w+"); 
 
 	//Allocation mémoire
-	data = (char **)malloc(data.sizeLines * sizeof(char *));
+	data.data = (char **)malloc(1111 * sizeof(char *));
 	for (i=0; i<initial_data.sizeLines; i++){
-		data[i] = (char *)calloc(initial_data.sizeColumns, sizeof(char));
+		data.data[i] = (char *)calloc(initial_data.sizeColumns, sizeof(char));
 	}
 
 	//Allocation du socket
@@ -236,8 +236,8 @@ int main(int argc , char ** argv){   //Fonction de réception des données
 	printf("Temps total moyen : %ld micro seconds\n", tempsboucle/10);		//Temps total de transmission
 	fprintf(resultat, "Moyenne : %ld ms \n", tempsboucle/10);
 
-	data_lines final_data = DataConvert("/home/pi/Documents/test.txt");  //Conversion du fichier de transmission de données en char **
-
+	data_lines final_data = DataConvert("/home/pi/Downloads/Pole-Capteurs-main/server/test.txt");  //Conversion du fichier de transmission de données en char **
+	printf("ok\n");
 	//Calcul du taux de perte et d'erreur
 	errorRate(initial_data,final_data);
 
