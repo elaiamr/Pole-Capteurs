@@ -96,12 +96,12 @@ int envoie(data_lines data){   //Fonction d'envoi de données
 	struct sockaddr_l2 addr = { 0 } ;
 	int s , status ;
 	char dest[18] = "DC:A6:32:78:6C:7E";
-
+	
 	//Allocation du socket
 	s = socket(AF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP) ;
 
 	//Modification du MTU
-	int mtu_value = 15620;    //Valeur modifiée par le fichier python (15620)
+	int mtu_value = 1000;    //Valeur modifiée par le fichier python (15620)
    	set_l2cap_mtu( s , mtu_value );
 
 	//Connexion entre les 2 raspberry
@@ -112,33 +112,42 @@ int envoie(data_lines data){   //Fonction d'envoi de données
 
 	//Initialisations d'envoi
 	int i,j,k=0;
-	struct timeval start, end, start_int1, end_int1, start_int2, end_int2, start_int3, end_int3;   //Initialisation de variables de temps
+	struct timeval start, end, start_int1, end_int1;   //Initialisation de variables de temps
 	char paquet[mtu_value];
 	memset(paquet,0,mtu_value * sizeof(char));   //Initialisation du paquet avec des zéros
+	
 	
 	//Envoi de données
 	if( 0 == status ) {
 		printf("Connexion réussie\n");
 		gettimeofday(&start, NULL);			//Initialisation du temps de départ
 		for (k=0;k<10;k++){
-		    int nb_data = data.sizeColumns*62;                //Nombre de données déjà inscrites dans le paquet
+		    int nb_data = 0;                //Nombre de données déjà inscrites dans le paquet
 		    gettimeofday(&start_int1, NULL);
 		    for (i=0; i<data.sizeLines;i++){
-			gettimeofday(&start_int2, NULL);
-			if (nb_data > mtu_value){        //On prend le parti de ne pas transmettre des bouts partiels de ligne
-			    send(s, paquet, mtu_value, 0);                  //le MTU étant normalement une valeur proportionnelle du nombre de lignes
+			if ((nb_data+data.sizeColumns) >= mtu_value){        //On prend le parti de ne pas transmettre des bouts partiels de ligne
+			    char paq_sent[nb_data];
+			    memset(paq_sent,0,nb_data * sizeof(char));
+			    strcpy(paq_sent,paquet);
+			    printf("%d\n", sizeof(paq_sent));
 			    memset (paquet, 0, mtu_value * sizeof(char));   //Réinitialisation du paquet
-			    nb_data = data.sizeColumns*62;                                    //Remise à zéro du nombre de données dans le paquet
+			    ssize_t bytes_send = send(s, paq_sent, mtu_value, 0);                  //le MTU étant normalement une valeur proportionnelle du nombre de lignes
+			    printf("bytes_send = %d\n",bytes_send);
+			    printf("error code %d: %s\n", errno, strerror(errno));
+			    nb_data = 0;                                    //Remise à zéro du nombre de données dans le paquet
 			}
-			gettimeofday(&end_int2, NULL);
-			printf("Temps if : %d\n", (end_int2.tv_sec * 1000000 + end_int2.tv_usec) - (start_int2.tv_sec * 1000000 + start_int2.tv_usec));
-			gettimeofday(&start_int3, NULL);
-			for(j=0; j<data.sizeColumns; j++){
-			    nb_data+=62;                          //Incrémentation du nombre de données ajoutées à paquet
-			    strcat (paquet,&data.data[i][j]);   //Ajout du caractère à paquet
+			int j=0;
+			int c = data.data[i][j];
+			while(c == 101 || c == 43 || c == 46 || c == 32 || c == 45 || (c >= 48 && c <= 57)){
+			    //printf("i : %d | j : %d | data : %c\n",i,j,data.data[i][j]);
+			    paquet[nb_data] = data.data[i][j];   //Ajout du caractère à paquet%d
+			    nb_data++;                          //Incrémentation du nombre de données ajoutées à paquet
+			    j++;
+			    c = data.data[i][j];
 			}
-			gettimeofday(&end_int3, NULL);
-			printf("Temps for : %d\n", (end_int3.tv_sec * 1000000 + end_int3.tv_usec) - (start_int3.tv_sec * 1000000 + start_int3.tv_usec));
+			char arobase = 64;
+			paquet[nb_data] = arobase;
+			nb_data++;
 		    }	
 		    gettimeofday(&end_int1, NULL);
 		    printf("Temps FOR : %d\n", (end_int1.tv_sec * 1000000 + end_int1.tv_usec) - (start_int1.tv_sec * 1000000 + start_int1.tv_usec));		

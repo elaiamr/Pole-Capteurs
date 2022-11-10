@@ -162,7 +162,7 @@ int main(int argc , char ** argv){   //Fonction de réception des données
 	}
 
 	//Modification du MTU
-	int mtu_value = 31240;		//Valeur modifiée par le fichier python
+	int mtu_value = 1000;		//Valeur modifiée par le fichier python
 	set_l2cap_mtu(s , mtu_value );
 	
 	//Conversion du fichier initial
@@ -182,7 +182,7 @@ int main(int argc , char ** argv){   //Fonction de réception des données
 	resultat = fopen("result.txt","w+"); 
 
 	//Allocation mémoire
-	data.data = (char **)malloc(1111 * sizeof(char *));
+	data.data = (char **)malloc(initial_data.sizeLines * sizeof(char *));
 	for (i=0; i<initial_data.sizeLines; i++){
 		data.data[i] = (char *)calloc(initial_data.sizeColumns, sizeof(char));
 	}
@@ -208,7 +208,8 @@ int main(int argc , char ** argv){   //Fonction de réception des données
 
 	gettimeofday(&start, NULL); // ATTENTION BRUNO VA LE MODIFIER
 	while(check) {
-		bytes_read = recv (client , buf , sizeof(buf), 0); //Réception des données du client
+		bytes_read = recv (client , buf , mtu_value, 0); //Réception des données du client
+		printf("%d\n", bytes_read);
 		if( bytes_read > 0 ) {
 			if( strcmp(buf, "stop") == 0 ){		//Quand on est arrivés à la fin des 10 envois
 				check = 0;
@@ -223,9 +224,14 @@ int main(int argc , char ** argv){   //Fonction de réception des données
 			}else{
 				strcpy(test, buf);   //Copie du buffer vers la mémoire "test"
 				if (fichier != NULL){
-					if (k==1) {     //Pour n'écrire qu'une seule fois les résultats de la transmission et non 10 fois !!
-						fprintf(fichier, "%s", test);
+				    for (i=0;i<mtu_value;i++){      //ATTENTION - à bien finaliser, il n'arrive pas encore à sauter une ligne
+					if (test[i] == "@"){
+					    char saut_de_ligne = 10;
+					    test[i] == saut_de_ligne;
 					}
+				    }
+				    printf("%s\n",test);
+				    fprintf(fichier, "%s", test);
 				}
 			}
 			memset(buf , 0, sizeof(buf ));
@@ -237,7 +243,7 @@ int main(int argc , char ** argv){   //Fonction de réception des données
 	fprintf(resultat, "Moyenne : %ld ms \n", tempsboucle/10);
 
 	data_lines final_data = DataConvert("/home/pi/Downloads/Pole-Capteurs-main/server/test.txt");  //Conversion du fichier de transmission de données en char **
-	printf("ok\n");
+
 	//Calcul du taux de perte et d'erreur
 	errorRate(initial_data,final_data);
 
@@ -245,4 +251,3 @@ int main(int argc , char ** argv){   //Fonction de réception des données
 	close (client) ;
 	close (s) ; 
 }
-
