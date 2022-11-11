@@ -161,8 +161,16 @@ int main(int argc , char ** argv){   //Fonction de réception des données
 		perror ("sched_setscheduler \n");       // Sinon le programme se termine via la fonction perror()
 	}
 
+	//Allocation du socket
+	s = socket ( AF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP );
+	loc_addr.l2_family = AF_BLUETOOTH;
+	loc_addr.l2_bdaddr = *BDADDR_ANY;
+	loc_addr.l2_psm = htobs(0x1001);
+	bind(s, (struct sockaddr *)&loc_addr, sizeof(loc_addr));
+	listen (s, 1);
+	
 	//Modification du MTU
-	int mtu_value = 1000;		//Valeur modifiée par le fichier python
+	int mtu_value = 15620;		//Valeur modifiée par le fichier python
 	set_l2cap_mtu(s , mtu_value );
 	
 	//Conversion du fichier initial
@@ -187,14 +195,6 @@ int main(int argc , char ** argv){   //Fonction de réception des données
 		data.data[i] = (char *)calloc(initial_data.sizeColumns, sizeof(char));
 	}
 
-	//Allocation du socket
-	s = socket ( AF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP );
-	loc_addr.l2_family = AF_BLUETOOTH;
-	loc_addr.l2_bdaddr = *BDADDR_ANY;
-	loc_addr.l2_psm = htobs(0x1001);
-	bind(s, (struct sockaddr *)&loc_addr, sizeof(loc_addr));
-	listen (s, 1);
-
 	//Acceptation de la connexion entre les Raspberry
 	client = accept (s , (struct sockaddr *)&rem_addr , &opt ) ;
 	ba2str ( &rem_addr.l2_bdaddr , buf ) ;
@@ -209,7 +209,7 @@ int main(int argc , char ** argv){   //Fonction de réception des données
 	gettimeofday(&start, NULL); // ATTENTION BRUNO VA LE MODIFIER
 	while(check) {
 		bytes_read = recv (client , buf , mtu_value, 0); //Réception des données du client
-		printf("%d\n", bytes_read);
+		//printf("%d\n", bytes_read);
 		if( bytes_read > 0 ) {
 			if( strcmp(buf, "stop") == 0 ){		//Quand on est arrivés à la fin des 10 envois
 				check = 0;
@@ -224,13 +224,13 @@ int main(int argc , char ** argv){   //Fonction de réception des données
 			}else{
 				strcpy(test, buf);   //Copie du buffer vers la mémoire "test"
 				if (fichier != NULL){
-				    for (i=0;i<mtu_value;i++){      //ATTENTION - à bien finaliser, il n'arrive pas encore à sauter une ligne
-					if (test[i] == "@"){
+				    /*for (i=0;i<mtu_value;i++){      //ATTENTION - à bien finaliser, il n'arrive pas encore à sauter une ligne
+					if (test[i] == '@'){
 					    char saut_de_ligne = 10;
 					    test[i] == saut_de_ligne;
 					}
-				    }
-				    printf("%s\n",test);
+				    }*/
+				    printf("%s\n", test);
 				    fprintf(fichier, "%s", test);
 				}
 			}
@@ -241,6 +241,8 @@ int main(int argc , char ** argv){   //Fonction de réception des données
 	tempsboucle += ((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec));
 	printf("Temps total moyen : %ld micro seconds\n", tempsboucle/10);		//Temps total de transmission
 	fprintf(resultat, "Moyenne : %ld ms \n", tempsboucle/10);
+	fclose(fichier);
+	fclose(resultat);
 
 	data_lines final_data = DataConvert("/home/pi/Downloads/Pole-Capteurs-main/server/test.txt");  //Conversion du fichier de transmission de données en char **
 
@@ -251,3 +253,4 @@ int main(int argc , char ** argv){   //Fonction de réception des données
 	close (client) ;
 	close (s) ; 
 }
+
