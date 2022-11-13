@@ -27,30 +27,31 @@ data_lines DataConvert ( char * lien ){    //Fonction de conversion des fichiers
     dataConverted.data = NULL;
     dataConverted.sizeColumns, dataConverted.sizeLines, dataConverted.missingLines = 0;
     int sizeColumns, sizeLines = 0;
-    char currentChar;    //Caractère lu actuellement
-    int c1 = 1;  //Compteur de lignes
-    int c2 = 1;  //Compteur de colonnes
-    int c3 = 0;  //Compteur annexe
+    char currentChar;    				//Caractère lu actuellement
+    int c1 = 1;  						//Compteur de lignes
+    int c2 = 1;  						//Compteur de colonnes
+    int c3 = 0;  						//Compteur annexe
 
     //Allocation mémoire initiale
     data = (char **) malloc (c1 * sizeof(char *));
     data[c1 - 1] = (char *) malloc (c2 * sizeof(char));
-    while ( ! feof(fichier)) {  //Tant qu'on est pas arrivés à la fin du fichier
+    while ( ! feof(fichier)) {  		//Tant qu'on est pas arrivés à la fin du fichier
 
         //Récupération du caractère lu
         currentChar = fgetc(fichier);
         int currentInt = currentChar;
 
-        if (currentInt == 10) {    //Si on a un saut de ligne (car int "\n" = 10)
+        if (currentInt == 10) {    		//Si on a un saut de ligne (car int "\n" = 10)
 
             c1++;
 
             if (c1==2){      
-                c3 = c2;       //Stockage du nombre de colonnes "normal" du fichier
+                c3 = c2;       			//Stockage du nombre de colonnes "normal" du fichier
                 dataConverted.sizeColumns = c3;
             } else {
-                if (c2 == c3 + 1 || c2 == c3 + 2 || c2 == c3 + 3 || c2 == c3 - 1 || c2 == c3 - 2 || c2 == c3 - 3){    // Présence (ou non) des - dans les données
-                    c3 = c2;     //Stockage du nouveau nombre "normal" de colonnes
+                if (c2 == c3 + 1 || c2 == c3 + 2 || c2 == c3 + 3 || c2 == c3 - 1 || c2 == c3 - 2 || c2 == c3 - 3){    
+										// Présence (ou non) des - dans les données
+                    c3 = c2;     		//Stockage du nouveau nombre "normal" de colonnes
                     dataConverted.sizeColumns = c3;
                 }
                 if (c2 != c3){
@@ -58,7 +59,7 @@ data_lines DataConvert ( char * lien ){    //Fonction de conversion des fichiers
                     dataConverted.missingLines++;
                 }
             }
-            c2 = 1;      //Retour à la première colonne
+            c2 = 1;      				//Retour à la première colonne
 
             //Réallocation mémoire pour la nouvelle ligne
             data = (char **) realloc (data, c1 * sizeof(char *));
@@ -101,7 +102,7 @@ int envoie(data_lines data){   //Fonction d'envoi de données
 	s = socket(AF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP) ;
 
 	//Modification du MTU
-	int mtu_value = 15620;    //Valeur modifiée par le fichier python (15620)
+	int mtu_value = 15620;    										//Valeur modifiée par le fichier python
    	set_l2cap_mtu( s , mtu_value );
 
 	//Connexion entre les 2 raspberry
@@ -112,45 +113,45 @@ int envoie(data_lines data){   //Fonction d'envoi de données
 
 	//Initialisations d'envoi
 	int i,j = 0;
-	struct timeval start, end, start_int1, end_int1;   //Initialisation de variables de temps
+	struct timeval start, end;  									//Initialisation de variables de temps
 	char paquet[mtu_value];
-	memset(paquet,0,mtu_value * sizeof(char));   //Initialisation du paquet avec des zéros
+	memset(paquet,0,mtu_value * sizeof(char));  					//Initialisation du paquet avec des zéros
 	
 	//Envoi de données
 	if( 0 == status ) {
 		printf("Connexion réussie\n");
-		gettimeofday(&start, NULL);			//Initialisation du temps de départ
-		int nb_data = 0;                //Nombre de données déjà inscrites dans le paquet
+		gettimeofday(&start, NULL);									//Initialisation du temps de départ
+		int nb_data = 0;               								//Nombre de données déjà inscrites dans le paquet
 		for (i=0; i<data.sizeLines;i++){
-		    if ((nb_data+data.sizeColumns) >= mtu_value){        //On prend le parti de ne pas transmettre des bouts partiels de ligne
-			ssize_t bytes_send = send(s, paquet, sizeof(paquet), 0);                  //le MTU étant normalement une valeur proportionnelle du nombre de lignes
-			memset(paquet,0,mtu_value * sizeof(char));   //Initialisation du paquet avec des zéros
-			nb_data = 0;                                    //Remise à zéro du nombre de données dans le paquet
+		    if ((nb_data+data.sizeColumns) >= mtu_value){        	//On prend le parti de ne pas transmettre des bouts partiels de ligne
+				send(s, paquet, sizeof(paquet), 0);             	//Envoi du paquet
+				memset(paquet,0,mtu_value * sizeof(char));  		//Initialisation du paquet avec des zéros
+				nb_data = 0;                                    	//Remise à zéro du nombre de données dans le paquet
 		    }
 		    int j=0;
 		    int c = data.data[i][j];
-		    while(c == 101 || c == 43 || c == 46 || c == 32 || c == 45 || (c >= 48 && c <= 57)){
-			paquet[nb_data] = data.data[i][j];   //Ajout du caractère à paquet
-			nb_data++;                          //Incrémentation du nombre de données ajoutées à paquet
-			j++;
-			c = data.data[i][j];
+		    while(c == 101 || c == 43 || c == 46 || c == 32 || c == 45 || (c >= 48 && c <= 57)){	
+																	//Si le caractère correspond aux données à transmettre
+				paquet[nb_data] = data.data[i][j];   				//Ajout du caractère à paquet
+				nb_data++;                          				//Incrémentation du nombre de données ajoutées à paquet
+				j++;
+				c = data.data[i][j];
 		    }
 		    char arobase = 64;
-		    paquet[nb_data] = arobase;
+		    paquet[nb_data] = arobase;								//Ajout d'un @ en tant que saut de ligne
 		    nb_data++;
-		}	
-		gettimeofday(&end_int1, NULL);	
-		send(s,"stop",4,0);  //Fin de la 10ème transmission du fichier
-		gettimeofday(&end, NULL);		//Initialisation du temps de fin
+		}		
+		send(s,"stop",4,0);  										//Fin de la transmission du fichier
+		gettimeofday(&end, NULL);									//Initialisation du temps de fin
 		printf("Temps de transmission : %ld micro seconds\n",
 		((end.tv_sec * 1000000 + end.tv_usec) -
-		(start.tv_sec * 1000000 + start.tv_usec)));  //Temps total de transmission
+		(start.tv_sec * 1000000 + start.tv_usec)));  				//Temps total de transmission
 	}
 	if( status < 0 ) {
 		fprintf(stderr, "error code %d: %s\n", errno, strerror(errno));
 		perror( "Connexion echouée\n" );
 	}
-	close (s);  //Fermeture du socket
+	close (s);  													//Fermeture du socket
 	return 0;
 }
 
