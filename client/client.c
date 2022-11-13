@@ -19,11 +19,11 @@ typedef struct {
 data_lines DataConvert ( char * lien ){    //Fonction de conversion des fichiers txt en char **
 
     //Ouverture du fichier
-	FILE * fichier = fopen(lien, "r");
+    FILE * fichier = fopen(lien, "r");
 
     //Initialisations
     data_lines dataConverted;
-	char ** data;
+    char ** data;
     dataConverted.data = NULL;
     dataConverted.sizeColumns, dataConverted.sizeLines, dataConverted.missingLines = 0;
     int sizeColumns, sizeLines = 0;
@@ -111,7 +111,7 @@ int envoie(data_lines data){   //Fonction d'envoi de données
 	status = connect (s , (struct sockaddr *)&addr , sizeof(addr ));
 
 	//Initialisations d'envoi
-	int i,j,k=0;
+	int i,j = 0;
 	struct timeval start, end, start_int1, end_int1;   //Initialisation de variables de temps
 	char paquet[mtu_value];
 	memset(paquet,0,mtu_value * sizeof(char));   //Initialisation du paquet avec des zéros
@@ -120,36 +120,29 @@ int envoie(data_lines data){   //Fonction d'envoi de données
 	if( 0 == status ) {
 		printf("Connexion réussie\n");
 		gettimeofday(&start, NULL);			//Initialisation du temps de départ
-		for (k=0;k<1;k++){
-		    int nb_data = 0;                //Nombre de données déjà inscrites dans le paquet
-		    gettimeofday(&start_int1, NULL);
-		    for (i=0; i<data.sizeLines;i++){
-			if ((nb_data+data.sizeColumns) >= mtu_value){        //On prend le parti de ne pas transmettre des bouts partiels de ligne
-			    ssize_t bytes_send = send(s, paquet, sizeof(paquet), 0);                  //le MTU étant normalement une valeur proportionnelle du nombre de lignes
-			    memset(paquet,0,mtu_value * sizeof(char));   //Initialisation du paquet avec des zéros
-			    nb_data = 0;                                    //Remise à zéro du nombre de données dans le paquet
-			}
-			int j=0;
-			int c = data.data[i][j];
-			while(c == 101 || c == 43 || c == 46 || c == 32 || c == 45 || (c >= 48 && c <= 57)){
-			    paquet[nb_data] = data.data[i][j];   //Ajout du caractère à paquet
-			    nb_data++;                          //Incrémentation du nombre de données ajoutées à paquet
-			    j++;
-			    c = data.data[i][j];
-			}
-			char arobase = 64;
-			paquet[nb_data] = arobase;
-			nb_data++;
-		    }	
-		    gettimeofday(&end_int1, NULL);
-		    printf("Temps FOR : %d\n", (end_int1.tv_sec * 1000000 + end_int1.tv_usec) - (start_int1.tv_sec * 1000000 + start_int1.tv_usec));		
-		    send(s, "next",4,0); //Fin du fichier
-		    memset(paquet, 0, mtu_value * sizeof(char));
-
+		int nb_data = 0;                //Nombre de données déjà inscrites dans le paquet
+		for (i=0; i<data.sizeLines;i++){
+		    if ((nb_data+data.sizeColumns) >= mtu_value){        //On prend le parti de ne pas transmettre des bouts partiels de ligne
+			ssize_t bytes_send = send(s, paquet, sizeof(paquet), 0);                  //le MTU étant normalement une valeur proportionnelle du nombre de lignes
+			memset(paquet,0,mtu_value * sizeof(char));   //Initialisation du paquet avec des zéros
+			nb_data = 0;                                    //Remise à zéro du nombre de données dans le paquet
+		    }
+		    int j=0;
+		    int c = data.data[i][j];
+		    while(c == 101 || c == 43 || c == 46 || c == 32 || c == 45 || (c >= 48 && c <= 57)){
+			paquet[nb_data] = data.data[i][j];   //Ajout du caractère à paquet
+			nb_data++;                          //Incrémentation du nombre de données ajoutées à paquet
+			j++;
+			c = data.data[i][j];
+		    }
+		    char arobase = 64;
+		    paquet[nb_data] = arobase;
+		    nb_data++;
 		}	
+		gettimeofday(&end_int1, NULL);	
 		send(s,"stop",4,0);  //Fin de la 10ème transmission du fichier
 		gettimeofday(&end, NULL);		//Initialisation du temps de fin
-		printf("Temps total : %ld micro seconds\n",
+		printf("Temps de transmission : %ld micro seconds\n",
 		((end.tv_sec * 1000000 + end.tv_usec) -
 		(start.tv_sec * 1000000 + start.tv_usec)));  //Temps total de transmission
 	}

@@ -134,11 +134,13 @@ int errorRate(data_lines data1, data_lines data2) {    //Fonction calculant le t
             }
         }
     }
+    error_rate = nb_errors / nb_data * 100;
+    printf("Taux d'erreur de %.10lf pourcents\n", error_rate);
 
     //Ajout des lignes manquantes (car on a pris la plus petite longueur de fichier possible)
     nb_errors += deltaLines * maxColumns;
     
-	//Calcul du taux d'erreur dans les données
+    //Calcul du taux d'erreur dans les données
     error_rate = nb_errors / nb_data * 100;
     printf("Taux d'erreur de %.10lf pourcents\n", error_rate);
 
@@ -151,8 +153,13 @@ int main(int argc , char ** argv){   //Fonction de réception des données
 	struct sockaddr_l2 loc_addr = { 0 } , rem_addr = { 0 } ; // struct de socket
 	int s=0, client , bytes_read ;
 	unsigned int opt = sizeof(rem_addr ) ;
-	int i,j=0;
+	int n = 0;
+	
+	//Création du data_lines final
 	data_lines data;
+	data.data = (char **) malloc (sizeof(char*));
+	data.data[0] = (char *) malloc (sizeof(char));
+	data.data[0][0] = '\0';
 
 	//Définition de la priorité du script en priorité temps réel
 	struct sched_param sched_p;					// Création d'une structure d'ordonancement temps réel pour le programme
@@ -189,12 +196,6 @@ int main(int argc , char ** argv){   //Fonction de réception des données
 	FILE* resultat = NULL;
 	resultat = fopen("result.txt","w+"); 
 
-	//Allocation mémoire
-	data.data = (char **)malloc(initial_data.sizeLines * sizeof(char *));
-	for (i=0; i<initial_data.sizeLines; i++){
-		data.data[i] = (char *)calloc(initial_data.sizeColumns, sizeof(char));
-	}
-
 	//Acceptation de la connexion entre les Raspberry
 	client = accept (s , (struct sockaddr *)&rem_addr , &opt ) ;
 	ba2str ( &rem_addr.l2_bdaddr , buf ) ;
@@ -202,7 +203,8 @@ int main(int argc , char ** argv){   //Fonction de réception des données
 	memset(buf , 0, sizeof(buf ));
 
 	//Réception de données
-	int check, k = 1;
+	int check = 1;
+	int i, j, final_j = 0;
 	long tempsboucle, temps_envoi = 0;
 	struct timeval start, end;			//Initialisation de variables de temps
 
@@ -213,44 +215,55 @@ int main(int argc , char ** argv){   //Fonction de réception des données
 		if( bytes_read > 0 ) {
 			if( strcmp(buf, "stop") == 0 ){		//Quand on est arrivés à la fin des 10 envois
 				check = 0;
-			}else if(strcmp(buf, "next") == 0){	//Fin d'une transmission
 				gettimeofday(&end, NULL);   //Initialisation du temps de fin
 				temps_envoi = ((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec));
-				tempsboucle+= temps_envoi;
-				printf("Temps pour n = %d : %ld micro seconds\n",k, temps_envoi);  //Temps total de transmission
-				fprintf(resultat, "%d : %ld ms\n",k, temps_envoi);
-				k++;
-				gettimeofday(&start, NULL);    //Initialisation du temps de début
+				printf("\nTemps de transmission : %ld micro secondes\n\n", temps_envoi);  //Temps total de transmission
+				fprintf(resultat, "%ld ms\n",temps_envoi);
 			}else{
 				strcpy(test, buf);   //Copie du buffer vers la mémoire "test"
 				if (fichier != NULL){
-				    /*for (i=0;i<mtu_value;i++){      //ATTENTION - à bien finaliser, il n'arrive pas encore à sauter une ligne
-					if (test[i] == '@'){
-					    char saut_de_ligne = 10;
-					    test[i] == saut_de_ligne;
+					fprintf(fichier, test);
+					int l=0;
+					for (l=0; l<bytes_read; l++){
+						if (test[l] == '@'){
+							data.data[i][j] = '\n';
+							i++;
+							if (j > final_j && i>1){
+							    final_j = j;
+							    //printf("final_j = %d\n", final_j);
+							}
+							j=0;
+							data.data = (char **) realloc (data.data, (i+1) * sizeof(char *));
+							data.data[i] = (char *) malloc (sizeof(char));
+							//printf("i = %d | sizeLines = %d\n", i, initial_data.sizeLines);
+						} else if (test[l] == '\0') {
+							data.data[i][j] = '\0';
+							l = bytes_read;
+							data.sizeLines = i;
+							data.sizeColumns = final_j;
+						} else {
+							//printf("%c\n", test[l]);
+							data.data[i][j] = test[l];
+							j++;
+							data.data[i] = (char *) realloc (data.data[i], (j+1) * sizeof(char));
+							//printf("j = %d | sizeColumns = %d\n", j, initial_data.sizeColumns);
+						}
 					}
-				    }*/
-				    printf("%s\n", test);
-				    fprintf(fichier, "%s", test);
 				}
 			}
 			memset(buf , 0, sizeof(buf ));
 		}
 	}
-	gettimeofday(&end, NULL);  //Initialisation du temps de fin
-	tempsboucle += ((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec));
-	printf("Temps total moyen : %ld micro seconds\n", tempsboucle/10);		//Temps total de transmission
-	fprintf(resultat, "Moyenne : %ld ms \n", tempsboucle/10);
-	fclose(fichier);
 	fclose(resultat);
-
-	data_lines final_data = DataConvert("/home/pi/Downloads/Pole-Capteurs-main/server/test.txt");  //Conversion du fichier de transmission de données en char **
-
+	fclose(fichier);
+	
+	printf("Taille du fichier initial : %d x %d\n", initial_data.sizeLines, initial_data.sizeColumns);
+	printf("Taille du fichier final : %d x %d\n\n", data.sizeLines, data.sizeColumns);
+	
 	//Calcul du taux de perte et d'erreur
-	errorRate(initial_data,final_data);
+	errorRate(initial_data,data);
 
 	//Fermeture des sockets
 	close (client) ;
 	close (s) ; 
 }
-
