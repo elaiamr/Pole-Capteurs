@@ -1,0 +1,8 @@
+
+Temps de transmission : 75833336 micro secondes
+
+Taille du fichier initial : 144172 x 127
+Taille du fichier final : 144076 x 127
+
+Taux de perte de -850037.3125000000 pourcents
+Taux d'erreur de 0.3630518913 pourcents
