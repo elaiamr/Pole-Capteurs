@@ -110,7 +110,9 @@ int errorRate(data_lines data1, data_lines data2) {    //Fonction calculant le t
     
     //Calcul du taux de perte
     if (Lines1 >= Lines2){   							//Le fichier 1 est plus long que le 2 (ou de même taille)
+		printf("%d %d %d %d\n", Lines1, Lines2, mLines1, mLines2);
         loss_rate = (Lines1 - Lines2 + mLines1 + mLines2) / Lines1 * 100;
+		printf("%f\n", loss_rate/100*Lines1);
         minLines = Lines2;
         deltaLines = Lines1 - Lines2;
         maxColumns = data1.sizeColumns;

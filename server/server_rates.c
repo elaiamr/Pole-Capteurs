@@ -109,12 +109,12 @@ int errorRate(data_lines data1, data_lines data2) {    //Fonction calculant le t
     
     //Calcul du taux de perte
     if (Lines1 >= Lines2){   							//Le fichier 1 est plus long que le 2 (ou de même taille)
-        loss_rate = (Lines1 - Lines2 + mLines1 + mLines2) / Lines1 * 100;
+        loss_rate = (Lines1 - Lines2) / Lines1 * 100;
         minLines = Lines2;
         deltaLines = Lines1 - Lines2;
         maxColumns = data1.sizeColumns;
     } else {				 							//Le fichier 2 est plus long que le 1
-        loss_rate = (Lines2 - Lines1 + mLines1 + mLines2) / Lines2 * 100;
+        loss_rate = (Lines2 - Lines1) / Lines2 * 100;
         minLines = Lines1;
         deltaLines = Lines2 - Lines1;
         maxColumns = data1.sizeColumns;
