@@ -17,8 +17,8 @@ int main(int argc , char ** argv){   //Fonction d'envoi de données
 	int s = 0;
 	int size = 1024;
 	int n, status;
-    char * server_ip = "192.168.1.2";   //0.137
-    unsigned int server_port = 39206;         //40559
+    char * server_ip = "192.168.1.2";   		//0.137
+    unsigned int server_port = 39206;         	//40559
 	
 	//Allocation du socket
 	s = socket(AF_INET, SOCK_DGRAM, 0) ;
