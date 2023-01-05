@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define PRESSION_ATM 1.013250000000000000e+05   //pression atmosphérique au sol
+#define PRESSION_ATM 101325   //pression atmosphérique au sol
 #define G 9.81                                  //accélération de la pesanteur
 #define VERTICAL_GRADIENT_TEMP 0.0065           //gradient vertical de température pour 100 m
 #define T0 288.15                               //équivaut à 15°C en moyenne
@@ -26,7 +26,7 @@ void main(){
     while (alt <= 30000){
         pression = generate_pression(alt);
         temperature = generate_temperature(alt);
-        differential_pression = generate_differential_pression (alt);
+        differential_pression = generate_differential_pression(pression);
         printf("%lf     %lf     %lf\n", pression, temperature, differential_pression);
         alt++;
     }
