@@ -170,12 +170,17 @@ int envoie(data_lines data){   //Fonction d'envoi de données
 		gettimeofday(&start, NULL);									//Initialisation du temps de départ
 		int nb_data = 0;               								//Nombre de données déjà inscrites dans le paquet
 		float nb_data_send = 0;										//Nombre de données déjà envoyées
+		float percent = 0;											//Pourcentage actuel de données envoyées
 		float nb_data_total = data.sizeColumns * data.sizeLines;	//Nombre total de données à envoyer
+		progress_bar(0);
 		for (i=0; i<data.sizeLines;i++){
 		    if ((nb_data+data.sizeColumns) >= mtu_value){        	//On prend le parti de ne pas transmettre des bouts partiels de ligne
 				send(s, paquet, sizeof(paquet), 0);             	//Envoi du paquet
 				nb_data_send += nb_data;
-				progress_bar(nb_data_send/nb_data_total);
+				if ((nb_data_send/nb_data_total) - percent > 0.05){
+					progress_bar(nb_data_send/nb_data_total);
+					percent = nb_data_send/nb_data_total;
+				}
 				memset(paquet,0,mtu_value * sizeof(char));  		//Initialisation du paquet avec des zéros
 				nb_data = 0;                                    	//Remise à zéro du nombre de données dans le paquet
 		    }
