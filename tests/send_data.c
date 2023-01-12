@@ -16,7 +16,7 @@ float generate_temperature(int alt){    //décroissance de 6°C/km dans les prem
 }
 
 float generate_differential_pression(float pression){
-    return (PRESSION_ATM - pression);
+    return (PRESSION_ATM - pression); //ok
 }
 
 void main(){
