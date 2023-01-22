@@ -7,7 +7,7 @@
 #define VERTICAL_GRADIENT_TEMP 0.0065           //gradient vertical de température pour 100 m
 #define T0 288.15                               //équivaut à 15°C en moyenne
 
-float generate_pression(int alt){       //formule internationale du nivellement barométrique (normalement seulement valable dans la troposphère)
+float generate_pressure(int alt){       //formule internationale du nivellement barométrique (normalement seulement valable dans la troposphère)
     return (PRESSION_ATM * pow((1 - (VERTICAL_GRADIENT_TEMP * alt) / T0), 5.255));
 }
 
@@ -15,19 +15,19 @@ float generate_temperature(int alt){    //décroissance de 6°C/km dans les prem
     return (T0 - (6 * alt / 1000));
 }
 
-float generate_differential_pression(float pression){
-    return (PRESSION_ATM - pression); //ok
+float generate_differential_pressure(float pressure){
+    return (PRESSION_ATM - pressure); 
 }
 
 void main(){
-    float pression, temperature, differential_pression;
+    float pressure, temperature, differential_pressure;
     int alt = 0;        //altitude en mètres
     printf("Pression          Température   Pression Différentielle\n");
     while (alt <= 30000){
-        pression = generate_pression(alt);
+        pressure = generate_pressure(alt);
         temperature = generate_temperature(alt);
-        differential_pression = generate_differential_pression(pression);
-        printf("%lf     %lf     %lf\n", pression, temperature, differential_pression);
+        differential_pressure = generate_differential_pressure(pressure);
+        printf("%lf     %lf     %lf\n", pressure, temperature, differential_pressure);
         alt++;
     }
     printf("Fini !\n");
