@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-
+//coucou
 #define PRESSION_ATM 101325   //pression atmosphérique au sol
 #define G 9.81                                  //accélération de la pesanteur
 #define VERTICAL_GRADIENT_TEMP 0.0065           //gradient vertical de température pour 100 m
